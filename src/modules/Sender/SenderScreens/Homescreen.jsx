@@ -23,7 +23,11 @@ const Homescreen = () => {
           </TouchableOpacity>
         </View>
 
-        <LegalDocumentCard
+         <View style={{width:"100%",height:200,justifyContent:"center",alignItems:"center"}}>
+             <Text style={{fontSize:14, color:'#2563EB', fontWeight:'600'}}>No Parcel</Text>
+            </View>
+
+        {/* <LegalDocumentCard
   title="Legal Documents"
   status="Pending Match"
   documentId="#EZ-99120"
@@ -42,7 +46,7 @@ const Homescreen = () => {
   toCode="NY"
   toCity="New York"
   postedTime="Posted 1 day ago"
-/>
+/> */}
 
         <GuaranteeCard
           title="Safe & Verified"

@@ -22,6 +22,59 @@ const item = {
   image: 'https://w7.pngwing.com/pngs/820/850/png-transparent-ipkg-packaging-and-labeling-box-parcel-box-miscellaneous-freight-transport-service-thumbnail.png',
 };
 
+
+  // <TouchableOpacity onPress={() => navigation.navigate('RequestDetails')}
+  //      style={styles.card}>
+  //       <View style={styles.cardHeader}>
+  //         <Image source={{ uri: item.image }} style={styles.itemImage} />
+
+  //         <View style={styles.headerInfo}>
+  //           <View style={styles.titleRow}>
+  //             <Text style={styles.itemTitle}>{item.title}</Text>
+
+  //             {item.status && (
+  //               <View style={styles.badge}>
+  //                 <Text style={styles.badgeText}>{item.status}</Text>
+  //               </View>
+  //             )}
+  //           </View>
+
+  //           <Text style={styles.itemSubtext}>
+  //             {item.category} • {item.weight}
+  //           </Text>
+
+  //           <View style={styles.urgencyRow}>
+  //             <Ionicons
+  //               name={isUrgent ? 'flame' : 'time-outline'}
+  //               size={14}
+  //               color={isUrgent ? '#FF8C00' : '#7AA2C5'}
+  //             />
+  //             <Text
+  //               style={[
+  //                 styles.urgencyText,
+  //                 isUrgent ? styles.textUrgent : styles.textTime,
+  //               ]}
+  //             >
+  //               {item.urgencyText}
+  //             </Text>
+  //           </View>
+  //         </View>
+
+  //       </View>
+
+
+  //       <View style={styles.buttonRow}>
+  //         <TouchableOpacity onPress={() => navigation.navigate('RequestRejected')}
+  //         style={styles.rejectButton}>
+  //           <Text style={styles.rejectText}>Reject</Text>
+  //         </TouchableOpacity>
+
+  //         <TouchableOpacity onPress={() => navigation.navigate('RequestAccepted')}
+  //         style={styles.acceptButton}>
+  //           <Text style={styles.acceptText}>Accept</Text>
+  //         </TouchableOpacity>
+  //       </View>
+  //     </TouchableOpacity>
 const IncomingRequestBlock = () => {
   const navigation = useNavigation();
   const isUrgent = item.urgencyType === 'urgent';
@@ -38,65 +91,9 @@ const IncomingRequestBlock = () => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity onPress={() => navigation.navigate('RequestDetails')}
-       style={styles.card}>
-        <View style={styles.cardHeader}>
-          <Image source={{ uri: item.image }} style={styles.itemImage} />
-
-          <View style={styles.headerInfo}>
-            <View style={styles.titleRow}>
-              <Text style={styles.itemTitle}>{item.title}</Text>
-
-              {item.status && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{item.status}</Text>
-                </View>
-              )}
-            </View>
-
-            <Text style={styles.itemSubtext}>
-              {item.category} • {item.weight}
-            </Text>
-
-            <View style={styles.urgencyRow}>
-              <Ionicons
-                name={isUrgent ? 'flame' : 'time-outline'}
-                size={14}
-                color={isUrgent ? '#FF8C00' : '#7AA2C5'}
-              />
-              <Text
-                style={[
-                  styles.urgencyText,
-                  isUrgent ? styles.textUrgent : styles.textTime,
-                ]}
-              >
-                {item.urgencyText}
-              </Text>
-            </View>
-          </View>
-
-          {/* <Text style={styles.priceText}>{item.price}</Text> */}
-        </View>
-
-        {/* <View style={styles.locationBar}>
-          <Ionicons name="location-outline" size={14} color="#7AA2C5" />
-          <Text style={styles.locationText}>
-            Pickup: {item.location}
-          </Text>
-        </View> */}
-
-        <View style={styles.buttonRow}>
-          <TouchableOpacity onPress={() => navigation.navigate('RequestRejected')}
-          style={styles.rejectButton}>
-            <Text style={styles.rejectText}>Reject</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate('RequestAccepted')}
-          style={styles.acceptButton}>
-            <Text style={styles.acceptText}>Accept</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+    <View style={{width:"100%",height:200,justifyContent:"center",alignItems:"center"}}>
+      <Text style={styles.filterText}>No Request</Text>
+    </View>
 
     </View>
   );

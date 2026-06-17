@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 
 // Mock Data for Recent Earnings
 const EARNINGS_DATA = [
@@ -46,10 +47,11 @@ const EARNINGS_DATA = [
   },
 ];
 
-const WalletComp = ({ navigation }) => {
+const WalletComp = () => {
   const [isBalanceVisible, setIsBalanceVisible] = useState(true);
   const totalBalance = "$0.00";
   const pendingAmount = 10.00;
+  const navigation = useNavigation()
 
   const renderTransactionIcon = (type) => {
     let iconName = 'airplane-outline';
@@ -160,13 +162,17 @@ const WalletComp = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <FlatList
+        <View style={{width:"100%",height:200,justifyContent:"center",alignItems:"center"}}>
+                   <Text style={{fontSize:14, color:'#2563EB', fontWeight:'600'}}>No Earning</Text>
+                  </View>
+
+      {/* <FlatList
         data={EARNINGS_DATA}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
-      />
+      /> */}
     </SafeAreaView>
   );
 };

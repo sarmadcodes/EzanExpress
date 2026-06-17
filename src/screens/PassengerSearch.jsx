@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,6 +11,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../components/BackBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import { BASE_API_URI } from '../constant/API';
 
 const TRAVELERS_DATA = [
   {
@@ -53,14 +56,31 @@ const PassengerSearch = ({ navigation }) => {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  const renderPassengerCard = (item) => {
-    const isFull = item.status === 'full';
+  const [flights, setFlights] = useState([]);
+  const getFlights = async () => {
+    let token = await AsyncStorage.getItem('usertoken');
+    axios
+      .get(`${BASE_API_URI}/flight/get`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(data => {
+        console.log(data.data)
+        setFlights(data.data);
+      });
+  };
+  useEffect(() => {
+    getFlights();
+  }, []);
 
+  const renderPassengerCard = (item) => {
+    // const isFull = item.status === 'full';
+
+    let isAv = ((Number(item?.capicity_in_kg)*1000)-Number(item?.already_full_capicity_in_grams)>0)
     const getStatusConfig = () => {
-      if (item.status === 'full') return { text: 'FULL', color: '#ef4444' };
-      if (item.status === 'documents_only')
-        return { text: 'DOCS ONLY', color: '#f59e0b' };
-      return { text: 'AVAILABLE', color: '#22c55e' };
+      if (isAv) {
+        return { text: 'AVAILABLE', color: '#22c55e' };
+      }
+      return { text: 'FULL', color: '#120202' };
     };
 
     const status = getStatusConfig();
@@ -68,20 +88,20 @@ const PassengerSearch = ({ navigation }) => {
     return (
       <TouchableOpacity
         activeOpacity={0.9}
-        key={item.id}
+        key={item._id}
         style={styles.card}
         onPress={() =>
-          navigation.navigate('CarrierProfile', { userId: item.id })
+          navigation.navigate('CarrierProfile', { userId: item.user_id,data: item})
         }
       >
         {/* Header */}
         <View style={styles.cardHeader}>
-          <View>
+          {/* <View>
             <Text style={styles.cardName}>{item.name}</Text>
             <Text style={styles.cardSubText}>
               {item.fromCode}, {item.from}
             </Text>
-          </View>
+          </View> */}
 
           <View style={[styles.statusBadge, { borderColor: status.color }]}>
             <Text style={[styles.statusText, { color: status.color }]}>
@@ -93,40 +113,36 @@ const PassengerSearch = ({ navigation }) => {
         {/* Route */}
         <View style={styles.routeRow}>
           <View>
-            <Text style={styles.routeCity}>{item.from}</Text>
-            <Text style={styles.routeDate}>{item.date}</Text>
+            <Text style={styles.routeCity}>{item.departure}</Text>
+            <Text style={styles.routeDate}>{item.departure_time}</Text>
           </View>
 
           <Ionicons name="arrow-forward" size={18} color="#3b82f6" />
 
           <View>
-            <Text style={styles.routeCity}>{item.to}</Text>
-            <Text style={styles.routeDate}>{item.arrivalDate}</Text>
+            <Text style={styles.routeCity}>{item?.destination}</Text>
+            <Text style={styles.routeDate}>{item?.arrival_time}</Text>
           </View>
         </View>
 
         {/* Capacity */}
         <View style={styles.infoBox}>
-          {isFull ? (
-            <Text style={styles.infoTextMuted}>
-              I am full. I don’t have space
-            </Text>
-          ) : (
-            <>
+          {
+             <>
               <Text style={styles.infoTextMuted}>
                 {item.status === 'documents_only'
                   ? 'Accepts documents only'
                   : 'Accepts parcels & documents'}
               </Text>
               <Text style={styles.infoText}>
-                Available space: {item.capacity}
+                Available space: {((Number(item?.capicity_in_kg)*1000)-Number(item?.already_full_capicity_in_grams))/1000}
               </Text>
-            </>
-          )}
+             </>
+          }
         </View>
 
         {/* Action */}
-        {!isFull && (
+        {isAv && (
           <TouchableOpacity
             style={styles.requestButton}
             onPress={(e) => {
@@ -199,7 +215,7 @@ const PassengerSearch = ({ navigation }) => {
 
         <Text style={styles.sectionTitle}>Available Passengers</Text>
 
-        {TRAVELERS_DATA.map(renderPassengerCard)}
+        {flights&&flights.map(renderPassengerCard)}
       </ScrollView>
     </SafeAreaView>
   );

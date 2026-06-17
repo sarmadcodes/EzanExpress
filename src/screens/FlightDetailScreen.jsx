@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import {
   StyleSheet,
   View,
@@ -15,6 +15,12 @@ import {
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { LOADING } from '../context/Loading';
+import { USER } from '../context/User';
+import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import { BASE_API_URI } from '../constant/API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SLIDER_WIDTH = Dimensions.get('window').width - 80;
 const MAX_CAPACITY = 40;
@@ -31,13 +37,18 @@ const FlightDetailScreen = ({ navigation }) => {
   const [departureTime, setDepartureTime] = useState('');
   const [arrivalTime, setArrivalTime] = useState('');
 
+  const { loading, setLoading } = useContext(LOADING);
+  const { userData, setUserData } = useContext(USER);
+
   const [capacity, setCapacity] = useState(15);
 
   // Animated value for slider thumb
-  const animatedX = useRef(new Animated.Value((capacity / MAX_CAPACITY) * SLIDER_WIDTH)).current;
+  const animatedX = useRef(
+    new Animated.Value((capacity / MAX_CAPACITY) * SLIDER_WIDTH),
+  ).current;
 
   // Update capacity and thumb position
-  const updateCapacity = (x) => {
+  const updateCapacity = x => {
     let newX = Math.max(0, Math.min(SLIDER_WIDTH, x));
     let value = Math.round((newX / SLIDER_WIDTH) * MAX_CAPACITY);
     setCapacity(value);
@@ -56,11 +67,11 @@ const FlightDetailScreen = ({ navigation }) => {
       onPanResponderMove: (_, gestureState) => {
         updateCapacity(animatedX._value + gestureState.dx);
       },
-    })
+    }),
   ).current;
 
   // Tap anywhere on slider
-  const handleSliderPress = (evt) => {
+  const handleSliderPress = evt => {
     const x = evt.nativeEvent.locationX;
     updateCapacity(x);
   };
@@ -74,9 +85,63 @@ const FlightDetailScreen = ({ navigation }) => {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
-        })
+        }),
       );
     }
+  };
+
+  const onCreateFilght = async () => {
+    setLoading(true);
+    if (
+      !(
+        departure &&
+        destination &&
+        airline &&
+        date &&
+        departureTime &&
+        arrivalTime &&
+        capacity
+      )
+    ) {
+      Toast.show({
+        text1: 'All fileds required!',
+        type: 'error',
+      });
+      setLoading(false);
+      return;
+    }
+    let token = await AsyncStorage.getItem('usertoken');
+    axios
+      .post(
+        `${BASE_API_URI}/flight/create`,
+        {
+          departure: departure,
+          destination: destination,
+          airline_name: airline,
+          travel_date: date,
+          departure_time: departureTime,
+          arrival_time: arrivalTime,
+          capicity_in_kg: capacity,
+        },
+        { headers: { Authorization: `Bearer ${token}` } },
+      )
+      .then(responseData => {
+        setLoading(false);
+        console.log(responseData.data);
+        Toast.show({
+          text1: 'Successfully created',
+          type: 'success',
+        });
+        navigation.reset({ index: 0, routes: [{ name: 'TravelerDashboard' }] });
+      })
+      .catch(err => {
+        console.log(err, 'err');
+        setLoading(false);
+        Toast.show({
+          text1: 'Server error try again!',
+          type: 'error',
+        });
+      });
   };
 
   return (
@@ -193,20 +258,24 @@ const FlightDetailScreen = ({ navigation }) => {
             <Text style={styles.capacityValue}>{capacity} kg</Text>
           </View>
 
-          <TouchableOpacity style={styles.sliderContainer} onPress={handleSliderPress} activeOpacity={1}>
+          <TouchableOpacity
+            style={styles.sliderContainer}
+            onPress={handleSliderPress}
+            activeOpacity={1}
+          >
             {/* Background */}
             <View style={styles.sliderBackground} />
             {/* Active */}
             <Animated.View
-              style={[
-                styles.sliderActive,
-                { width: animatedX },
-              ]}
+              style={[styles.sliderActive, { width: animatedX }]}
             />
             {/* Thumb */}
             <Animated.View
               {...panResponder.panHandlers}
-              style={[styles.sliderThumb, { left: Animated.subtract(animatedX, 8) }]}
+              style={[
+                styles.sliderThumb,
+                { left: Animated.subtract(animatedX, 8) },
+              ]}
             />
           </TouchableOpacity>
 
@@ -227,7 +296,7 @@ const FlightDetailScreen = ({ navigation }) => {
         {/* Button */}
         <TouchableOpacity
           style={styles.primaryButton}
-          onPress={() => navigation.navigate('TravelerDashboard')}
+          onPress={() => onCreateFilght()}
         >
           <Text style={styles.buttonText}>Continue</Text>
           <Ionicons name="chevron-forward" size={20} color="#FFF" />
@@ -241,11 +310,21 @@ export default FlightDetailScreen;
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0F172A' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 16 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: '700' },
   helpText: { color: '#2D9CDB' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-  sectionTitle: { color: '#FFF', fontSize: 20, fontWeight: '700', marginTop: 18, marginBottom: 10 },
+  sectionTitle: {
+    color: '#FFF',
+    fontSize: 20,
+    fontWeight: '700',
+    marginTop: 18,
+    marginBottom: 10,
+  },
   label: { color: '#94A3B8', fontSize: 13, marginBottom: 6 },
   inputWrapper: {
     flexDirection: 'row',
@@ -259,22 +338,90 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, color: '#FFF', fontSize: 15 },
   placeholderText: { color: '#636E72', fontSize: 15 },
-  dashedLine: { height: 16, borderLeftWidth: 1, borderLeftColor: '#334155', borderStyle: 'dashed', marginVertical: 6, marginLeft: 'auto', marginRight: 14 },
-  timeRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 12 },
+  dashedLine: {
+    height: 16,
+    borderLeftWidth: 1,
+    borderLeftColor: '#334155',
+    borderStyle: 'dashed',
+    marginVertical: 6,
+    marginLeft: 'auto',
+    marginRight: 14,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
   halfInput: { width: '48%' },
-  card: { backgroundColor: '#1E293B', borderRadius: 14, padding: 16, marginTop: 20, borderWidth: 1, borderColor: '#334155' },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   cardTitle: { color: '#FFF', fontWeight: '600' },
   capacityValue: { color: '#2D9CDB', fontWeight: '700' },
   sliderContainer: { height: 30, justifyContent: 'center', marginTop: 14 },
-  sliderBackground: { position: 'absolute', height: 4, width: '100%', backgroundColor: '#334155', borderRadius: 2 },
-  sliderActive: { position: 'absolute', height: 4, backgroundColor: '#2D9CDB', borderRadius: 2 },
-  sliderThumb: { position: 'absolute', width: 16, height: 16, borderRadius: 8, backgroundColor: '#2D9CDB', borderWidth: 2, borderColor: '#0F172A' },
-  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
+  sliderBackground: {
+    position: 'absolute',
+    height: 4,
+    width: '100%',
+    backgroundColor: '#334155',
+    borderRadius: 2,
+  },
+  sliderActive: {
+    position: 'absolute',
+    height: 4,
+    backgroundColor: '#2D9CDB',
+    borderRadius: 2,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#2D9CDB',
+    borderWidth: 2,
+    borderColor: '#0F172A',
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 6,
+  },
   limitText: { color: '#64748B', fontSize: 12 },
-  uploadBox: { height: 140, borderWidth: 1, borderColor: '#334155', borderStyle: 'dashed', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginTop: 8 },
+  uploadBox: {
+    height: 140,
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderStyle: 'dashed',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+  },
   uploadText: { color: '#FFF', marginTop: 8 },
   formatText: { color: '#94A3B8', fontSize: 12 },
-  primaryButton: { backgroundColor: '#2185D5', height: 54, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 26 },
-  buttonText: { color: '#FFF', fontSize: 17, fontWeight: '600', marginRight: 8 },
+  primaryButton: {
+    backgroundColor: '#2185D5',
+    height: 54,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 26,
+  },
+  buttonText: {
+    color: '#FFF',
+    fontSize: 17,
+    fontWeight: '600',
+    marginRight: 8,
+  },
 });

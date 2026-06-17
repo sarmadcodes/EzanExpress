@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,20 +12,90 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LOADING } from '../context/Loading';
+import { USER } from '../context/User';
+import { BASE_API_URI } from '../constant/API';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const LoginScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('email'); // 'email' or 'phone'
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const { loading, setLoading } = useContext(LOADING);
+  const { userData, setUserData } = useContext(USER);
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    // bankAccount: '',
+  });
 
   const BG_COLOR = '#050B18';
+
+  const onLogin = () => {
+    setLoading(true);
+    // setTimeout(() => {
+    //   setLoading(false);
+    //   navigation.navigate('RoleScreen');
+    // }, 4000);
+    const check = Object.values(formData).some(
+      e => typeof e === 'string' && e.trim() === '',
+    );
+
+    if (check) {
+      Toast.show({
+        text1: 'All fileds required!',
+        type: 'error',
+      });
+      setLoading(false);
+      return;
+    }
+    console.log(formData, 'formData');
+    console.log(`${BASE_API_URI}/login`, '`${BASE_API_URI}/register`');
+    axios
+      .post(`${BASE_API_URI}/login`, {
+        email: formData?.email,
+        password: formData?.password,
+      })
+      .then(async data => {
+        console.log(data);
+        setLoading(false);
+        await AsyncStorage.setItem('usertoken', data?.data.token);
+        setUserData(data?.data?.user);
+        if (data?.data?.user?.user_type == 'traveler') {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'TravelerDashboard' }],
+          });
+        } else if (data?.data?.user?.user_type == 'sender') {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'SenderDashboard' }],
+          });
+        } else {
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'RoleScreen' }],
+          });
+        }
+      })
+      .catch(err => {
+        console.log(err);
+        Toast.show({
+          text1: 'Server error try again!',
+          type: 'error',
+        });
+        setLoading(false);
+      });
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" backgroundColor={BG_COLOR} />
-      
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
         {/* Header */}
@@ -34,30 +104,45 @@ const LoginScreen = ({ navigation }) => {
             <Ionicons name="arrow-back" size={24} color="#FFF" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Ezan Express</Text>
-          <View style={{ width: 24 }} /> 
+          <View style={{ width: 24 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Welcome Text */}
           <Text style={styles.title}>Login to your account</Text>
           <Text style={styles.subtitle}>
-            Continue the global delivery network and resume shipping or earning today.
+            Continue the global delivery network and resume shipping or earning
+            today.
           </Text>
 
           {/* Tabs */}
           <View style={styles.tabContainer}>
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'email' && styles.activeTab]} 
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'email' && styles.activeTab]}
               onPress={() => setActiveTab('email')}
             >
-              <Text style={[styles.tabText, activeTab === 'email' && styles.activeTabText]}>Email</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'email' && styles.activeTabText,
+                ]}
+              >
+                Email
+              </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={[styles.tab, activeTab === 'phone' && styles.activeTab]} 
+
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'phone' && styles.activeTab]}
               onPress={() => setActiveTab('phone')}
             >
-              <Text style={[styles.tabText, activeTab === 'phone' && styles.activeTabText]}>Phone Number</Text>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'phone' && styles.activeTabText,
+                ]}
+              >
+                Phone Number
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -69,15 +154,23 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
-                placeholder={activeTab === 'email' ? 'Enter your email address' : 'Enter phone number'}
+                value={formData?.email}
+                placeholder={
+                  activeTab === 'email'
+                    ? 'Enter your email address'
+                    : 'Enter phone number'
+                }
                 placeholderTextColor="#5E6A81"
-                keyboardType={activeTab === 'email' ? 'email-address' : 'phone-pad'}
+                keyboardType={
+                  activeTab === 'email' ? 'email-address' : 'phone-pad'
+                }
                 autoCapitalize="none"
+                onChangeText={e => setFormData({ ...formData, email: e })}
               />
-              <Ionicons 
-                name={activeTab === 'email' ? 'mail-outline' : 'call-outline'} 
-                size={20} 
-                color="#5E6A81" 
+              <Ionicons
+                name={activeTab === 'email' ? 'mail-outline' : 'call-outline'}
+                size={20}
+                color="#5E6A81"
               />
             </View>
 
@@ -86,12 +179,18 @@ const LoginScreen = ({ navigation }) => {
             <View style={styles.inputWrapper}>
               <TextInput
                 style={styles.input}
+                value={formData?.password}
                 placeholder="Enter password"
                 placeholderTextColor="#5E6A81"
                 secureTextEntry={!showPassword}
+                onChangeText={e => setFormData({ ...formData, password: e })}
               />
               <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={20} color="#5E6A81" />
+                <Ionicons
+                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+                  size={20}
+                  color="#5E6A81"
+                />
               </TouchableOpacity>
             </View>
 
@@ -109,28 +208,35 @@ const LoginScreen = ({ navigation }) => {
           </View>
 
           {/* Agreement Checkbox */}
-          <TouchableOpacity 
-            style={styles.checkboxContainer} 
+          <TouchableOpacity
+            style={styles.checkboxContainer}
             onPress={() => setAgreed(!agreed)}
           >
             <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
               {agreed && <Ionicons name="checkmark" size={14} color="#FFF" />}
             </View>
             <Text style={styles.checkboxText}>
-              I agree to the <Text style={styles.linkText}>Terms of Service</Text> and <Text style={styles.linkText}>Privacy Policy</Text>.
+              I agree to the{' '}
+              <Text style={styles.linkText}>Terms of Service</Text> and{' '}
+              <Text style={styles.linkText}>Privacy Policy</Text>.
             </Text>
           </TouchableOpacity>
 
           {/* Continue Button */}
-          <TouchableOpacity onPress={() => navigation.navigate('RoleScreen')}
-          style={styles.button} activeOpacity={0.8}>
+          <TouchableOpacity
+            onPress={() => onLogin()}
+            style={styles.button}
+            activeOpacity={0.8}
+          >
             <Text style={styles.buttonText}>Continue</Text>
           </TouchableOpacity>
 
           {/* Login Footer */}
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('RegistrationScreen')}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('RegistrationScreen')}
+            >
               <Text style={styles.linkText}>Create now</Text>
             </TouchableOpacity>
           </View>
@@ -153,7 +259,12 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
   scrollContent: { paddingHorizontal: 25, paddingTop: 10 },
   title: { fontSize: 32, fontWeight: 'bold', color: '#FFF', marginBottom: 10 },
-  subtitle: { fontSize: 16, color: '#8E9AAF', lineHeight: 22, marginBottom: 30 },
+  subtitle: {
+    fontSize: 16,
+    color: '#8E9AAF',
+    lineHeight: 22,
+    marginBottom: 30,
+  },
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
@@ -165,7 +276,12 @@ const styles = StyleSheet.create({
   tabText: { color: '#5E6A81', fontSize: 16, fontWeight: '600' },
   activeTabText: { color: '#1E90FF' },
   inputSection: { marginBottom: 20 },
-  inputLabel: { color: '#FFF', fontSize: 14, marginBottom: 8, fontWeight: '500' },
+  inputLabel: {
+    color: '#FFF',
+    fontSize: 14,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -178,7 +294,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: { flex: 1, color: '#FFF', fontSize: 15 },
-  checkboxContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 30 },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 30,
+  },
   checkbox: {
     width: 20,
     height: 20,

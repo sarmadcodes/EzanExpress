@@ -16,7 +16,11 @@ const Activityscreen = () => {
           </TouchableOpacity>
         </View>
 
-        <LegalDocumentCard
+          <View style={{width:"100%",height:200,justifyContent:"center",alignItems:"center"}}>
+                     <Text style={{fontSize:14, color:'#2563EB', fontWeight:'600'}}>No Parcel</Text>
+                    </View>
+
+        {/* <LegalDocumentCard
   title="Legal Documents"
   status="Pending Match"
   documentId="#EZ-99120"
@@ -25,7 +29,7 @@ const Activityscreen = () => {
   toCode="CDG"
   toCity="Paris"
   postedTime="Posted 2 hours ago"
-/>
+/> */}
     </SafeAreaView>
   )
 }

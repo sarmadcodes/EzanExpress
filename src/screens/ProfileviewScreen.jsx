@@ -1,5 +1,6 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState } from 'react';
+import axios from 'axios';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -13,6 +14,8 @@ import {
   StatusBar,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { BASE_API_URI } from '../constant/API';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ProfileviewScreen = ({ navigation }) => {
   const [fullName, setFullName] = useState('Jonathan Davis');
@@ -24,6 +27,19 @@ const ProfileviewScreen = ({ navigation }) => {
   const handleSave = () => {
     setIsEditing(false);
   };
+
+  const getUser = async()=>{
+    let token = await AsyncStorage.getItem("usertoken")
+    await axios.get(`${BASE_API_URI}/login`,{headers:{Authorization:`Bearer ${token}`}}).then((responseData)=>{
+     console.log(responseData,"responseData")
+      setFullName(responseData?.data?.user?.name?.split("/")?.join(" "))
+      setEmail(responseData?.data?.user?.email)
+      setPhoneNumber(responseData?.data?.user?.phone_number)
+    })
+  }
+  useEffect(()=>{
+getUser()
+  },[])
 
   return (
     <SafeAreaView style={styles.container}>

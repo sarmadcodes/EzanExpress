@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import moment from 'moment';
 
-const TravelDashboard = () => {
+const TravelDashboard = ({ data }) => {
   const [isEnabled, setIsEnabled] = useState(true);
 
   return (
@@ -61,26 +62,33 @@ const TravelDashboard = () => {
 
       {/* Flight Ticket Card */}
       <ImageBackground
-        source={{ uri: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=500' }}
+        source={{
+          uri: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=500',
+        }}
         style={styles.flightCard}
         imageStyle={{ borderRadius: 16, opacity: 0.3 }}
       >
         <View style={styles.cardOverlay}>
           <View style={styles.cardHeader}>
             <View style={styles.upcomingBadge}>
-              <Text style={styles.upcomingText}>UPCOMING</Text>
+              <Text style={styles.upcomingText}>
+                {data?.[0]?.travel_date &&
+                moment(data?.[0]?.travel_date).isAfter(moment(), 'day')
+                  ? 'UPCOMING'
+                  : 'EXPIRED'}
+              </Text>
             </View>
             <Ionicons name="airplane-outline" size={20} color="#7AA2C5" />
           </View>
 
           <View style={styles.flightRoute}>
             <View>
-              <Text style={styles.airportCode}>JFK</Text>
-              <Text style={styles.cityText}>New York</Text>
+              <Text style={styles.airportCode}>{data?.[0]?.departure}</Text>
+              {/* <Text style={styles.cityText}>New York</Text> */}
             </View>
 
             <View style={styles.flightLineContainer}>
-              <Text style={styles.flightNumber}>TK1984</Text>
+              <Text style={styles.flightNumber}>{data?.[0]?.airline_name}</Text>
               <View style={styles.dottedLine}>
                 <View style={styles.dot} />
                 <View style={styles.line} />
@@ -93,12 +101,15 @@ const TravelDashboard = () => {
                 <View style={styles.line} />
                 <View style={styles.dot} />
               </View>
-              <Text style={styles.duration}>10h 40m</Text>
+              <Text style={styles.duration}>
+                {((d)=>`${d.hours()}h ${d.minutes()}m`)(moment.duration(moment(data?.[0]?.arrival_time,"hh:mm A").diff(moment(data?.[0]?.departure_time,"hh:mm A"))))
+}
+              </Text>
             </View>
 
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.airportCode}>IST</Text>
-              <Text style={styles.cityText}>Istanbul</Text>
+              <Text style={styles.airportCode}>{data?.[0]?.destination}</Text>
+              {/* <Text style={styles.cityText}>Istanbul</Text> */}
             </View>
           </View>
 
@@ -106,7 +117,11 @@ const TravelDashboard = () => {
 
           <View style={styles.dateContainer}>
             <Ionicons name="calendar-outline" size={16} color="#7AA2C5" />
-            <Text style={styles.dateText}>Tomorrow, 14:00</Text>
+            <Text style={styles.dateText}>
+              {data?.[0]?.travel_date &&
+                moment(data?.[0]?.travel_date)?.calendar()}{' '}
+              {data?.[0]?.departure_time}
+            </Text>
           </View>
         </View>
       </ImageBackground>

@@ -1,17 +1,19 @@
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import React from 'react'
+import React, { useContext } from 'react'
 import Ionicons from '@react-native-vector-icons/ionicons'
 import { useNavigation } from '@react-navigation/native'
+import { USER } from '../context/User'
 
 const DashboardHeader = () => {
   const navigation = useNavigation()
+  const {userData,setUserData} = useContext(USER)
   return (
     <View style={styles.header}>
       <View style={{flexDirection:'row', alignItems:'center', gap:10}}>
         <Image source={require('../assets/logo1.jpg')} style={styles.profileicon} />
         <View>
             <Text style={styles.greeting}>Good Evening!</Text> 
-            <Text style={styles.name}>Sahil</Text>
+            <Text style={styles.name}>{userData?.name?userData?.name?.split("/")?.join(" "):"Jhon"}</Text>
         </View>
       </View>
       <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>

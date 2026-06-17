@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,10 +12,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../components/BackBar';
+import { LOADING } from '../context/Loading';
+import { USER } from '../context/User';
 
 const PARCEL_TYPES = [
-  'Medicine', 'Electronics', 'Books', 'Cultural foods', 
-  'Cultural goods', 'Clothes', 'Spareparts', 'Stationaries', 'Others'
+  'Medicine',
+  'Electronics',
+  'Books',
+  'Cultural foods',
+  'Cultural goods',
+  'Clothes',
+  'Spareparts',
+  'Stationaries',
+  'Others',
 ];
 
 const POPULAR_DESTINATIONS = [
@@ -36,20 +45,52 @@ const NewParcelRequest = ({ navigation }) => {
   // Logic: Automatic Price Determination based on Weight
   useEffect(() => {
     const w = parseFloat(weight);
+
     if (!w) {
       setPrice(0);
       return;
     }
-    if (itemType === 'Document') {
-      // Example logic: £13 for docs up to 500g
-      setPrice(13);
-    } else {
-      // Example logic: £38 for 8kg, or £4.75 per kg
-      setPrice(Math.round(w * 4.75));
-    }
+
+    const getPriceByWeight = w => {
+      // DOCUMENT PRICING
+      if (itemType === 'Document') {
+        if (w / 100 <= 0.4) return 10; // Doc-400g
+        if (w / 100 <= 1) return 15; // 401g–1kg
+        if (w / 100 <= 2) return 18;
+        if (w / 100 <= 3) return 26;
+        if (w / 100 <= 4) return 34;
+        if (w / 100 <= 5) return 42;
+        return 50; // fallback for docs above range (optional)
+      }
+
+      // PARCEL PRICING
+      if (w <= 5) return 42; // 4.1–5kg (if non-doc fallback)
+      if (w <= 6) return 50;
+      if (w <= 7) return 58;
+      if (w <= 8) return 66;
+      if (w <= 9) return 74;
+      if (w <= 10) return 82;
+      if (w <= 11) return 100;
+      if (w <= 12) return 108;
+      if (w <= 13) return 116;
+      if (w <= 14) return 124;
+      if (w <= 15) return 132;
+      if (w <= 16) return 140;
+      if (w <= 17) return 148;
+      if (w <= 18) return 156;
+      if (w <= 19) return 164;
+      if (w <= 20) return 172;
+      if (w <= 21) return 180;
+      if (w <= 22) return 188;
+      if (w <= 23) return 196;
+
+      return 0; // out of range
+    };
+
+    setPrice(getPriceByWeight(w));
   }, [weight, itemType]);
 
-  const toggleParcelType = (type) => {
+  const toggleParcelType = type => {
     if (selectedParcelTypes.includes(type)) {
       setSelectedParcelTypes(selectedParcelTypes.filter(t => t !== type));
     } else {
@@ -57,11 +98,14 @@ const NewParcelRequest = ({ navigation }) => {
     }
   };
 
+  const { loading, setLoading } = useContext(LOADING);
+  const { userData, setUserData } = useContext(USER);
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor='#0B121C' />
-      <View style={{paddingHorizontal:15}}>
-      <BackBar title='New Parcel request' />
+      <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
+      <View style={{ paddingHorizontal: 15 }}>
+        <BackBar title="New Parcel request" />
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -92,36 +136,58 @@ const NewParcelRequest = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.inputLabel}>The item you're sending</Text>
           <View style={styles.typeSelectorRow}>
-            {['Document', 'Parcel'].map((t) => (
-              <TouchableOpacity 
+            {['Document', 'Parcel'].map(t => (
+              <TouchableOpacity
                 key={t}
                 style={[styles.typeBtn, itemType === t && styles.typeBtnActive]}
-                onPress={() => { setItemType(t); setWeight(''); }}
+                onPress={() => {
+                  setItemType(t);
+                  setWeight('');
+                }}
               >
-                <Text style={[styles.typeBtnText, itemType === t && styles.typeBtnTextActive]}>{t}</Text>
+                <Text
+                  style={[
+                    styles.typeBtnText,
+                    itemType === t && styles.typeBtnTextActive,
+                  ]}
+                >
+                  {t}
+                </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           {itemType === 'Parcel' && (
             <View style={styles.parcelTypeGrid}>
-              {PARCEL_TYPES.map((p) => (
-                <TouchableOpacity 
-                  key={p} 
-                  style={[styles.chip, selectedParcelTypes.includes(p) && styles.chipActive]}
+              {PARCEL_TYPES.map(p => (
+                <TouchableOpacity
+                  key={p}
+                  style={[
+                    styles.chip,
+                    selectedParcelTypes.includes(p) && styles.chipActive,
+                  ]}
                   onPress={() => toggleParcelType(p)}
                 >
-                  <Text style={[styles.chipText, selectedParcelTypes.includes(p) && styles.chipTextActive]}>{p}</Text>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      selectedParcelTypes.includes(p) && styles.chipTextActive,
+                    ]}
+                  >
+                    {p}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           )}
 
-          <Text style={styles.inputLabel}>Weight ({itemType === 'Document' ? 'g' : 'kg'})</Text>
+          <Text style={styles.inputLabel}>
+            Weight ({itemType === 'Document' ? 'g' : 'kg'})
+          </Text>
           <View style={styles.inputWrapper}>
             <TextInput
               style={styles.input}
-              placeholder={itemType === 'Document' ? "e.g. 200" : "e.g. 8"}
+              placeholder={itemType === 'Document' ? 'e.g. 200' : 'e.g. 8'}
               placeholderTextColor="#64748b"
               keyboardType="numeric"
               value={weight}
@@ -135,7 +201,12 @@ const NewParcelRequest = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.inputLabel}>Destination City</Text>
           <View style={styles.inputWrapper}>
-            <Ionicons name="airplane" size={20} color="#64748b" style={{ marginRight: 10 }} />
+            <Ionicons
+              name="airplane"
+              size={20}
+              color="#64748b"
+              style={{ marginRight: 10 }}
+            />
             <TextInput
               style={styles.input}
               placeholder="Enter city or airport code (e.g., London)"
@@ -148,8 +219,12 @@ const NewParcelRequest = ({ navigation }) => {
         </View>
 
         <Text style={styles.sectionHeading}>POPULAR DESTINATIONS</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.popularList}>
-          {POPULAR_DESTINATIONS.map((item) => (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.popularList}
+        >
+          {POPULAR_DESTINATIONS.map(item => (
             <TouchableOpacity key={item.id} style={styles.popCard}>
               <View style={styles.popIconCircle}>
                 <Ionicons name={item.icon} size={24} color="#1E90FF" />
@@ -161,22 +236,31 @@ const NewParcelRequest = ({ navigation }) => {
 
         <Text style={styles.sectionHeading}>RECENT SEARCHES</Text>
         <TouchableOpacity style={styles.recentItem}>
-           <View style={styles.recentCircle}><Ionicons name="time-outline" size={18} color="#94a3b8" /></View>
-           <View style={{ flex: 1, marginLeft: 12 }}>
-              <Text style={styles.recentTitle}>Toronto, Canada</Text>
-              <Text style={styles.recentSub}>YYZ • Pearson Intl</Text>
-           </View>
-           <Ionicons name="chevron-forward" size={18} color="#475569" />
+          <View style={styles.recentCircle}>
+            <Ionicons name="time-outline" size={18} color="#94a3b8" />
+          </View>
+          <View style={{ flex: 1, marginLeft: 12 }}>
+            <Text style={styles.recentTitle}>Toronto, Canada</Text>
+            <Text style={styles.recentSub}>YYZ • Pearson Intl</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color="#475569" />
         </TouchableOpacity>
-
       </ScrollView>
 
       {/* Footer Button */}
       <View style={styles.footer}>
-        <TouchableOpacity onPress={() => navigation.navigate('ReceiverDetails')}
-        style={styles.continueBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('ReceiverDetails')}
+          style={styles.continueBtn}
+          activeOpacity={0.8}
+        >
           <Text style={styles.continueText}>Send Request</Text>
-          <Ionicons name="arrow-forward" size={20} color="#fff" style={{ marginLeft: 8 }} />
+          <Ionicons
+            name="arrow-forward"
+            size={20}
+            color="#fff"
+            style={{ marginLeft: 8 }}
+          />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -195,12 +279,25 @@ const styles = StyleSheet.create({
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   scrollContent: { padding: 20, paddingBottom: 100 },
   progressContainer: { marginBottom: 30 },
-  progressInfo: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
+  progressInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
   stepText: { color: '#1E90FF', fontSize: 12, fontWeight: 'bold' },
   stepName: { color: '#94a3b8', fontSize: 12 },
   progressBarBg: { height: 4, backgroundColor: '#1e293b', borderRadius: 2 },
-  progressBarFill: { height: '100%', backgroundColor: '#1E90FF', borderRadius: 2 },
-  mainTitle: { color: '#fff', fontSize: 32, fontWeight: 'bold', lineHeight: 40 },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#1E90FF',
+    borderRadius: 2,
+  },
+  mainTitle: {
+    color: '#fff',
+    fontSize: 32,
+    fontWeight: 'bold',
+    lineHeight: 40,
+  },
   subTitle: { color: '#94a3b8', fontSize: 16, marginTop: 12, lineHeight: 24 },
   badgeRow: { marginTop: 20, marginBottom: 30 },
   secureBadge: {
@@ -214,9 +311,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(16, 185, 129, 0.2)',
   },
-  secureText: { color: '#10b981', fontSize: 13, marginLeft: 6, fontWeight: '600' },
+  secureText: {
+    color: '#10b981',
+    fontSize: 13,
+    marginLeft: 6,
+    fontWeight: '600',
+  },
   section: { marginBottom: 24 },
-  inputLabel: { color: '#ffffffde', fontSize: 14, marginBottom: 10, fontWeight: '500' },
+  inputLabel: {
+    color: '#ffffffde',
+    fontSize: 14,
+    marginBottom: 10,
+    fontWeight: '500',
+  },
   typeSelectorRow: { flexDirection: 'row', marginBottom: 15 },
   typeBtn: {
     flex: 1,
@@ -241,7 +348,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
-  chipActive: { borderColor: '#1E90FF', backgroundColor: 'rgba(59, 130, 246, 0.1)' },
+  chipActive: {
+    borderColor: '#1E90FF',
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
   chipText: { color: '#94a3b8', fontSize: 12 },
   chipTextActive: { color: '#1E90FF', fontWeight: 'bold' },
   inputWrapper: {
@@ -256,7 +366,14 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, color: '#fff', fontSize: 15 },
   priceTag: { color: '#10b981', fontWeight: 'bold', fontSize: 16 },
-  sectionHeading: { color: '#94a3b8', fontSize: 12, fontWeight: 'bold', letterSpacing: 1, marginBottom: 15, marginTop: 10 },
+  sectionHeading: {
+    color: '#94a3b8',
+    fontSize: 12,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    marginBottom: 15,
+    marginTop: 10,
+  },
   popularList: { flexDirection: 'row', marginBottom: 30 },
   popCard: {
     backgroundColor: '#1e293b',
@@ -267,10 +384,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginRight: 12,
   },
-  popIconCircle: { width: 44, height: 44, backgroundColor: 'rgba(59, 130, 246, 0.1)', borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
+  popIconCircle: {
+    width: 44,
+    height: 44,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   popName: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  recentItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  recentCircle: { width: 40, height: 40, backgroundColor: '#1e293b', borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
+  recentItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  recentCircle: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   recentTitle: { color: '#fff', fontSize: 15, fontWeight: '600' },
   recentSub: { color: '#64748b', fontSize: 12, marginTop: 2 },
   footer: {

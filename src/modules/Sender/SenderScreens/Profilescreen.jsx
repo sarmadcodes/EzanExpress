@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,23 +12,34 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../../../components/BackBar';
+import { USER } from '../../../context/User';
+import { LOADING } from '../../../context/Loading';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const SettingsScreen = ({ navigation }) => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
 
   // Reusable Component for List Items
-  const SettingItem = ({ icon, label, value, onPress, hasSwitch, switchValue, onSwitchChange }) => (
-    <TouchableOpacity 
-      style={styles.itemContainer} 
-      onPress={onPress} 
+  const SettingItem = ({
+    icon,
+    label,
+    value,
+    onPress,
+    hasSwitch,
+    switchValue,
+    onSwitchChange,
+  }) => (
+    <TouchableOpacity
+      style={styles.itemContainer}
+      onPress={onPress}
       disabled={hasSwitch}
     >
       <View style={styles.iconBackground}>
         <Ionicons name={icon} size={22} color="#1E90FF" />
       </View>
       <Text style={styles.itemLabel}>{label}</Text>
-      
+
       <View style={styles.rightSection}>
         {value && <Text style={styles.itemValue}>{value}</Text>}
         {hasSwitch ? (
@@ -45,16 +56,29 @@ const SettingsScreen = ({ navigation }) => {
       </View>
     </TouchableOpacity>
   );
+  const { userData, setUserData } = useContext(USER);
+  const { loading, setLoading } = useContext(LOADING);
+
+  const OnLogout = async () => {
+    setLoading(true);
+    await AsyncStorage.removeItem('usertoken');
+    setUserData({});
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'WelcomeScreen' }],
+    });
+    setLoading(false);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle='light-content' backgroundColor='#0B121C' />
-      <BackBar title='Profile' />
+      <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
+      <BackBar title="Profile" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Card */}
-        <TouchableOpacity 
-          style={styles.profileCard} 
+        <TouchableOpacity
+          style={styles.profileCard}
           onPress={() => navigation.navigate('ProfileviewScreen')}
         >
           <Image
@@ -62,9 +86,13 @@ const SettingsScreen = ({ navigation }) => {
             style={styles.avatar}
           />
           <View style={styles.profileInfo}>
-            <Text style={styles.userName}>John Doe</Text>
+            <Text style={styles.userName}>{userData?.name?userData?.name?.split("/")?.join(" "):"...."}</Text>
             <View style={styles.verifiedBadge}>
-              <Ionicons name="checkmark-done-circle" size={16} color="#1E90FF" />
+              <Ionicons
+                name="checkmark-done-circle"
+                size={16}
+                color="#1E90FF"
+              />
               <Text style={styles.verifiedText}>Verified</Text>
             </View>
             <Text style={styles.viewProfileText}>View Profile</Text>
@@ -73,41 +101,43 @@ const SettingsScreen = ({ navigation }) => {
 
         {/* Preferences Section */}
         <Text style={styles.sectionTitle}>PREFERENCES</Text>
-        <SettingItem 
-          icon="notifications-outline" 
-          label="Notifications" 
-          hasSwitch 
+        <SettingItem
+          icon="notifications-outline"
+          label="Notifications"
+          hasSwitch
           switchValue={isNotificationsEnabled}
-          onSwitchChange={() => setIsNotificationsEnabled(!isNotificationsEnabled)}
+          onSwitchChange={() =>
+            setIsNotificationsEnabled(!isNotificationsEnabled)
+          }
         />
-        <SettingItem 
-          icon="scan-outline" 
-          label="Face ID" 
-          hasSwitch 
+        <SettingItem
+          icon="scan-outline"
+          label="Face ID"
+          hasSwitch
           switchValue={isFaceIdEnabled}
           onSwitchChange={() => setIsFaceIdEnabled(!isFaceIdEnabled)}
         />
-        <SettingItem 
-          icon="language-outline" 
-          label="Language" 
-          value="English" 
-          onPress={() => navigation.navigate('Language')} 
+        <SettingItem
+          icon="language-outline"
+          label="Language"
+          value="English"
+          onPress={() => navigation.navigate('Language')}
         />
-        <SettingItem 
-          icon="cash-outline" 
-          label="Currency" 
-          value="USD ($)" 
-          onPress={() => navigation.navigate('Currency')} 
+        <SettingItem
+          icon="cash-outline"
+          label="Currency"
+          value="USD ($)"
+          onPress={() => navigation.navigate('Currency')}
         />
 
         {/* Security Section */}
         {/* <Text style={styles.sectionTitle}>SECURITY & PRIVACY</Text> */}
-        <SettingItem 
-          icon="lock-closed-outline" 
-          label="Change Password" 
-          onPress={() => navigation.navigate('ChangePassword')} 
+        <SettingItem
+          icon="lock-closed-outline"
+          label="Change Password"
+          onPress={() => navigation.navigate('ChangePassword')}
         />
-        
+
         {/* <SettingItem 
           icon="shield-checkmark-outline" 
           label="Privacy Settings" 
@@ -116,24 +146,24 @@ const SettingsScreen = ({ navigation }) => {
 
         {/* Support Section */}
         <Text style={styles.sectionTitle}>SUPPORT</Text>
-        <SettingItem 
-          icon="headset-outline" 
-          label="Help & Support" 
-          onPress={() => navigation.navigate('HelpCenter')} 
+        <SettingItem
+          icon="headset-outline"
+          label="Help & Support"
+          onPress={() => navigation.navigate('HelpCenter')}
         />
-        <SettingItem 
-          icon="information-circle-outline" 
-          label="About Ezan Express" 
-          onPress={() => navigation.navigate('AboutScreen')} 
+        <SettingItem
+          icon="information-circle-outline"
+          label="About Ezan Express"
+          onPress={() => navigation.navigate('AboutScreen')}
         />
-        <SettingItem 
-          icon="alert-outline" 
-          label="Complaints" 
+        <SettingItem
+          icon="alert-outline"
+          label="Complaints"
           onPress={() => navigation.navigate('ComplaintScreen')}
         />
 
         {/* Log Out Button */}
-        <TouchableOpacity style={styles.logoutButton}>
+        <TouchableOpacity style={styles.logoutButton} onPress={OnLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FF5252" />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
@@ -148,12 +178,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0B121C',
-    paddingHorizontal:15,
+    paddingHorizontal: 15,
   },
   profileCard: {
     flexDirection: 'row',
     backgroundColor: '#1A222C',
-    marginVertical:10,
+    marginVertical: 10,
     padding: 20,
     borderRadius: 20,
     alignItems: 'center',
