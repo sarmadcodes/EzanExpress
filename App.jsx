@@ -34,6 +34,7 @@ import { USER } from './src/context/User';
 import { DIMENSIONS } from './src/constant/Dimmission';
 import Toast from 'react-native-toast-message';
 import WithdrawScreen from "./src/components/WithdrawScreen"
+import AddBankScreen from "./src/components/AddBankScreen"
 
 
 const Stack = createStackNavigator();
@@ -86,6 +87,7 @@ const App = () => {
             <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
             <Stack.Screen name="PaymentSuccess" component={PaymentSuccess} />
             <Stack.Screen name="WithdrawScreen" component={WithdrawScreen} />
+            <Stack.Screen name="AddBankScreen" component={AddBankScreen} />
             <Stack.Screen
               name="DeliveryConfirmation"
               component={DeliveryConfirmation}
