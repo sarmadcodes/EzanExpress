@@ -1,342 +1,83 @@
-import React, { useEffect, useState } from 'react';
-import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  FlatList,
-  StatusBar,
-} from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, RefreshControl, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
 import BackBar from '../../../components/BackBar';
+import { BASE_API_URI } from '../../../constant/API';
 
-const ACTIVITIES_STORAGE_KEY = 'ezan_wallet_activities';
+const toNumber = amount => Number(amount || 0);
 
-const DEFAULT_ACTIVITIES = [
-  {
-    id: 'seed-earning-1',
-    title: 'Delivery #4928',
-    subtitle: 'NYC (JFK) to London (LHR)',
-    amount: 120.0,
-    date: 'Oct 24',
-    type: 'delivery_flight',
-  },
-  {
-    id: 'seed-earning-2',
-    title: 'Delivery #4904',
-    subtitle: 'Berlin to Istanbul',
-    amount: 95.0,
-    date: 'Oct 16',
-    type: 'delivery_box',
-  },
-];
-
-const WalletComp = () => {
-  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
-  const [activities, setActivities] = useState([]);
-  const totalBalance = "$0.00";
-  const pendingAmount = activities.filter((item) => item.status === 'Pending').reduce((sum, item) => sum + Math.abs(item.amount), 0);
+const WalletScreen = () => {
   const navigation = useNavigation();
+  const [wallet, setWallet] = useState({ availableBalance: 0, pendingBalance: 0, currency: 'gbp' });
+  const [connect, setConnect] = useState(null);
+  const [withdrawals, setWithdrawals] = useState([]);
+  const [visible, setVisible] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    loadActivities();
+  const headers = async () => {
+    const token = await AsyncStorage.getItem('usertoken');
+    if (!token) throw new Error('Please log in again.');
+    return { Authorization: `Bearer ${token}` };
+  };
+
+  const loadWallet = useCallback(async () => {
+    try {
+      setError('');
+      const auth = { headers: await headers() };
+      const [summaryResponse, connectResponse, withdrawalsResponse] = await Promise.all([
+        axios.get(`${BASE_API_URI}/wallet`, auth),
+        axios.get(`${BASE_API_URI}/withdrawals/connect/status`, auth),
+        axios.get(`${BASE_API_URI}/withdrawals`, auth),
+      ]);
+      const summary = summaryResponse.data?.wallet || summaryResponse.data;
+      const history = withdrawalsResponse.data?.withdrawals || withdrawalsResponse.data?.data || withdrawalsResponse.data || [];
+      setWallet({ availableBalance: toNumber(summary?.availableBalance), pendingBalance: toNumber(summary?.pendingBalance), currency: String(summary?.currency || 'gbp').toLowerCase() });
+      setConnect(connectResponse.data?.status || connectResponse.data);
+      setWithdrawals(Array.isArray(history) ? history : []);
+    } catch (requestError) {
+      setError(requestError?.response?.data?.message || requestError.message || 'Unable to load wallet.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const loadActivities = async () => {
-    try {
-      const storedActivities = await AsyncStorage.getItem(ACTIVITIES_STORAGE_KEY);
-      if (storedActivities) {
-        const parsedActivities = JSON.parse(storedActivities);
-        setActivities(parsedActivities.length > 0 ? parsedActivities : DEFAULT_ACTIVITIES);
-      } else {
-        setActivities(DEFAULT_ACTIVITIES);
-      }
-    } catch (error) {
-      console.log(error);
-      setActivities(DEFAULT_ACTIVITIES);
-    }
-  };
+  useEffect(() => { loadWallet(); }, [loadWallet]);
+  useEffect(() => navigation.addListener('focus', loadWallet), [navigation, loadWallet]);
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadActivities();
-    });
+  const money = amount => `${wallet.currency === 'gbp' ? '£' : wallet.currency === 'usd' ? '$' : `${wallet.currency.toUpperCase()} `}${toNumber(amount).toFixed(2)}`;
+  const payoutsEnabled = Boolean(connect?.payoutsEnabled);
+  const withdrawalItem = ({ item }) => <View style={styles.item}>
+    <View style={styles.itemIcon}><Ionicons name="arrow-up-outline" size={20} color="#fbbf24" /></View>
+    <View style={styles.itemCopy}><Text style={styles.itemTitle}>Withdrawal request</Text><Text style={styles.itemSub}>{item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : 'Bank transfer'}</Text></View>
+    <View style={styles.itemRight}><Text style={styles.itemAmount}>-{money(item.amount)}</Text><Text style={styles.itemStatus}>{String(item.status || 'requested').replaceAll('_', ' ')}</Text></View>
+  </View>;
 
-    return unsubscribe;
-  }, [navigation]);
+  return <SafeAreaView style={styles.container}>
+    <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
+    <BackBar title="My Wallet" />
+    <View style={styles.balanceCard}><View style={styles.balanceHeader}><Text style={styles.balanceLabel}>Available balance</Text><TouchableOpacity onPress={() => setVisible(value => !value)}><Ionicons name={visible ? 'eye-outline' : 'eye-off-outline'} size={20} color="#94a3b8" /></TouchableOpacity></View><Text style={styles.balance}>{visible ? money(wallet.availableBalance) : '••••••'}</Text>{wallet.pendingBalance > 0 ? <Text style={styles.pending}>Pending withdrawals: {money(wallet.pendingBalance)}</Text> : null}</View>
 
-  const renderTransactionIcon = (type) => {
-    let iconName = 'airplane-outline';
-    if (type === 'delivery_box') iconName = 'cube-outline';
-    if (type === 'withdrawal') iconName = 'card-outline';
+    <View style={styles.buttons}><TouchableOpacity style={[styles.withdraw, !payoutsEnabled && styles.disabled]} onPress={() => payoutsEnabled && navigation.navigate('WithdrawScreen')} disabled={!payoutsEnabled}><Ionicons name="arrow-up-outline" size={20} color="#fff" /><Text style={styles.buttonText}>Withdraw</Text></TouchableOpacity><TouchableOpacity style={styles.bankButton} onPress={() => navigation.navigate('AddBankScreen')}><Ionicons name="business-outline" size={20} color="#fff" /><Text style={styles.buttonText}>{payoutsEnabled ? 'Bank' : 'Add Bank'}</Text></TouchableOpacity></View>
+    {!payoutsEnabled ? <TouchableOpacity style={styles.setupNotice} onPress={() => navigation.navigate('AddBankScreen')}><Ionicons name="information-circle-outline" size={17} color="#fbbf24" /><Text style={styles.setupText}>Complete bank setup to enable withdrawals.</Text></TouchableOpacity> : null}
 
-    return (
-      <View style={styles.iconContainer}>
-        <Ionicons name={iconName} size={22} color="#5dade2" />
-      </View>
-    );
-  };
-
-  const renderItem = ({ item }) => (
-    <View style={styles.transactionItem}>
-      <View style={styles.leftRow}>
-        {renderTransactionIcon(item.type)}
-        <View style={styles.textDetails}>
-          <Text style={styles.transactionTitle}>{item.title}</Text>
-          <Text style={styles.transactionSubtitle}>{item.subtitle}</Text>
-        </View>
-      </View>
-      <View style={styles.rightRow}>
-        {item.status ? (
-          <Text style={styles.statusText}>{item.status}</Text>
-        ) : null}
-        <Text
-          style={[
-            styles.amountText,
-            { color: item.amount > 0 ? '#2ecc71' : '#ffffff' },
-          ]}
-        >
-          {item.amount > 0
-            ? `+$${item.amount.toFixed(2)}`
-            : `-$${Math.abs(item.amount).toFixed(2)}`}
-        </Text>
-        <Text style={styles.dateText}>{item.date}</Text>
-      </View>
-    </View>
-  );
-
-  return (
-    <SafeAreaView style={{flex:1, backgroundColor:'#0B121C', paddingHorizontal:15}}>
-      <StatusBar barStyle='light-content' backgroundColor='#0B121C' />
-      <BackBar title='My Wallet' />
-
-      {/* Balance Card */}
-      <View style={styles.balanceCard}>
-        <View style={styles.balanceHeader}>
-          <Text style={styles.balanceLabel}>Total Balance</Text>
-          <TouchableOpacity onPress={() => setIsBalanceVisible(!isBalanceVisible)}>
-            <Ionicons
-              name={isBalanceVisible ? 'eye-outline' : 'eye-off-outline'}
-              size={20}
-              color="#94a3b8"
-            />
-          </TouchableOpacity>
-        </View>
-
-        <Text style={styles.balanceAmount}>
-          {isBalanceVisible ? totalBalance : '••••••'}
-        </Text>
-
-        {pendingAmount > 0 && (
-          <View style={styles.pendingContainer}>
-            <Ionicons
-              name="ellipsis-horizontal-circle-outline"
-              size={16}
-              color="#2ecc71"
-            />
-            <Text style={styles.pendingText}>
-              Pending: ${pendingAmount.toFixed(2)}
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Action Buttons */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity
-          style={styles.withdrawButton}
-          onPress={() => navigation.navigate('WithdrawScreen')}
-        >
-          <Ionicons
-            name="arrow-up-outline"
-            size={20}
-            color="#FFF"
-            style={styles.btnIcon}
-          />
-          <Text style={styles.buttonText}>Withdraw</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.addBankButton}
-          onPress={() => navigation.navigate('AddBankScreen')}
-        >
-          <Ionicons
-            name="business-outline"
-            size={20}
-            color="#FFF"
-            style={styles.btnIcon}
-          />
-          <Text style={styles.buttonText}>Add Bank</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Recent Activities List */}
-      <View style={styles.listHeader}>
-        <Text style={styles.sectionTitle}>Recent Activities</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('AllTransactions')}>
-          <Text style={styles.seeAllText}>See All</Text>
-        </TouchableOpacity>
-      </View>
-
-      {activities.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>No activities yet</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={activities}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-    </SafeAreaView>
-  );
+    <View style={styles.historyHeader}><Text style={styles.sectionTitle}>Withdrawal history</Text><TouchableOpacity onPress={loadWallet}><Ionicons name="refresh" size={19} color="#60a5fa" /></TouchableOpacity></View>
+    {loading ? <ActivityIndicator style={styles.loader} color="#60a5fa" size="large" /> : null}
+    {!loading && error ? <View style={styles.empty}><Text style={styles.emptyText}>{error}</Text><TouchableOpacity onPress={loadWallet}><Text style={styles.retry}>Try again</Text></TouchableOpacity></View> : null}
+    {!loading && !error ? <FlatList data={withdrawals} keyExtractor={(item, index) => String(item.id || item._id || index)} renderItem={withdrawalItem} refreshControl={<RefreshControl refreshing={false} onRefresh={loadWallet} tintColor="#60a5fa" />} ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyText}>No withdrawal requests yet.</Text></View>} contentContainerStyle={styles.list} /> : null}
+  </SafeAreaView>;
 };
 
 const styles = StyleSheet.create({
-
-  balanceCard: {
-    backgroundColor: '#1e293b',
-    borderRadius: 24,
-    padding: 25,
-    marginTop: 20,
-    marginBottom: 25,
-  },
-  balanceHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  balanceLabel: {
-    color: '#94a3b8',
-    fontSize: 16,
-    marginRight: 8,
-  },
-  balanceAmount: {
-    color: '#ffffff',
-    fontSize: 42,
-    fontWeight: 'bold',
-  },
-  pendingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  pendingText: {
-    color: '#2ecc71',
-    fontSize: 14,
-    marginLeft: 6,
-    fontWeight: '600',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 40,
-  },
-  withdrawButton: {
-    flex: 0.48,
-    backgroundColor: '#1E90FF',
-    flexDirection: 'row',
-    height: 55,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addBankButton: {
-    flex: 0.48,
-    backgroundColor: '#1e293b',
-    flexDirection: 'row',
-    height: 55,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  btnIcon: {
-    marginRight: 8,
-  },
-  listHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    color: '#ffffff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  seeAllText: {
-    color: '#1E90FF',
-    fontSize: 14,
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  leftRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 0.7,
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#1e293b',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 15,
-  },
-  textDetails: {
-    justifyContent: 'center',
-  },
-  transactionTitle: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  transactionSubtitle: {
-    color: '#94a3b8',
-    fontSize: 13,
-  },
-  rightRow: {
-    alignItems: 'flex-end',
-    flex: 0.3,
-  },
-  amountText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  statusText: {
-    color: '#fbbf24',
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  dateText: {
-    color: '#64748b',
-    fontSize: 12,
-  },
+  container: { flex: 1, backgroundColor: '#0B121C', paddingHorizontal: 15 }, balanceCard: { backgroundColor: '#1e293b', borderRadius: 22, padding: 22, marginTop: 20, marginBottom: 22 }, balanceHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, balanceLabel: { color: '#94a3b8', fontSize: 15 }, balance: { color: '#fff', fontSize: 38, fontWeight: '800', marginTop: 8 }, pending: { color: '#fbbf24', fontSize: 13, fontWeight: '600', marginTop: 11 },
+  buttons: { flexDirection: 'row', justifyContent: 'space-between' }, withdraw: { height: 55, borderRadius: 12, backgroundColor: '#2563eb', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', flex: .48 }, bankButton: { height: 55, borderRadius: 12, backgroundColor: '#1e293b', borderColor: '#334155', borderWidth: 1, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', flex: .48 }, disabled: { opacity: .45 }, buttonText: { color: '#fff', fontWeight: '700', fontSize: 15, marginLeft: 7 },
+  setupNotice: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#2d2108', padding: 11, borderRadius: 10, marginTop: 12 }, setupText: { color: '#fde68a', fontSize: 12, marginLeft: 7 }, historyHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 25, marginBottom: 8 }, sectionTitle: { color: '#fff', fontSize: 19, fontWeight: '700' }, loader: { marginTop: 42 }, list: { flexGrow: 1, paddingBottom: 24 },
+  item: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' }, itemIcon: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center', backgroundColor: '#2d2108', marginRight: 12 }, itemCopy: { flex: 1 }, itemTitle: { color: '#f8fafc', fontSize: 15, fontWeight: '600' }, itemSub: { color: '#94a3b8', fontSize: 12, marginTop: 3 }, itemRight: { alignItems: 'flex-end' }, itemAmount: { color: '#f8fafc', fontWeight: '700', fontSize: 14 }, itemStatus: { color: '#fbbf24', textTransform: 'uppercase', fontSize: 10, fontWeight: '700', marginTop: 3 },
+  empty: { alignItems: 'center', paddingTop: 45 }, emptyText: { color: '#94a3b8', fontSize: 14, textAlign: 'center' }, retry: { color: '#60a5fa', fontWeight: '700', marginTop: 10 },
 });
 
-export default WalletComp;
+export default WalletScreen;
