@@ -1,5 +1,5 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -20,6 +20,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 
 const LoginScreen = ({ navigation }) => {
+  useEffect(() => {
+    console.log('✅ DevTools working — LoginScreen mounted');
+    console.warn('DevTools Test Warning');
+  }, []);
   const [activeTab, setActiveTab] = useState('email'); // 'email' or 'phone'
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
