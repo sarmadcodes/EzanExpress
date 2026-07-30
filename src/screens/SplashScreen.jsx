@@ -21,7 +21,6 @@ const Splashscreen = () => {
 
   const CheckLogin = async () => {
     let token = await AsyncStorage.getItem('usertoken');
-    console.log(token,"token")
     if (!token) {
       navigation.reset({
         index: 0,
