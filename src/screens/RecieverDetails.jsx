@@ -32,7 +32,7 @@ const ReceiverDetails = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor='#0B121C' />
       <View style={{paddingHorizontal:15}}>
-        <BackBar title='Reviever Details' />
+       <BackBar title="Receiver's Details" />
       </View>
 
       <KeyboardAvoidingView 

@@ -1,19 +1,25 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState, useEffect, useContext } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import axios from 'axios';
+import React, {useEffect, useMemo, useState} from 'react';
+
 import {
-  StyleSheet,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
+  ActivityIndicator,
   ScrollView,
   StatusBar,
-  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {SafeAreaView} from 'react-native-safe-area-context';
+
 import BackBar from '../components/BackBar';
-import { LOADING } from '../context/Loading';
-import { USER } from '../context/User';
+import Input from '../components/Input/Input';
+import Button from '../components/Button/Button';
+import {BASE_API_URI} from '../constant/API';
 
 const PARCEL_TYPES = [
   'Medicine',
@@ -27,406 +33,1475 @@ const PARCEL_TYPES = [
   'Others',
 ];
 
-const POPULAR_DESTINATIONS = [
-  { id: '1', name: 'New York', icon: 'business' },
-  { id: '2', name: 'Dubai', icon: 'sunny' },
-  { id: '3', name: 'Paris', icon: 'rose' },
-  { id: '4', name: 'London', icon: 'boat' },
-];
+const DEFAULT_MESSAGE =
+  'Can you please take this parcel/document for me?';
 
-const NewParcelRequest = ({ navigation }) => {
-  const [step, setStep] = useState(1);
-  const [itemType, setItemType] = useState('Parcel'); // 'Document' or 'Parcel'
+const NewParcelRequest = ({navigation, route}) => {
+  const flight = route?.params?.flight || route?.params?.traveler || {};
+
+  const [itemType, setItemType] = useState('parcel');
   const [selectedParcelTypes, setSelectedParcelTypes] = useState([]);
+  const [otherParcelType, setOtherParcelType] = useState('');
   const [weight, setWeight] = useState('');
-  const [price, setPrice] = useState(0);
-  const [destination, setDestination] = useState('');
 
-  // Logic: Automatic Price Determination based on Weight
-  useEffect(() => {
-    const w = parseFloat(weight);
+  const [receiverName, setReceiverName] = useState('');
+  const [receiverPhone, setReceiverPhone] = useState('');
+  const [message, setMessage] = useState(DEFAULT_MESSAGE);
 
-    if (!w) {
-      setPrice(0);
+  const [quote, setQuote] = useState(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [errors, setErrors] = useState({});
+
+  /*
+  |--------------------------------------------------------------------------
+  | Flight
+  |--------------------------------------------------------------------------
+  */
+
+  const flightId = flight?._id;
+
+  const travelerId =
+    flight?.passenger?._id ||
+    flight?.user_id ||
+    route?.params?.traveler?.passenger?._id ||
+    route?.params?.traveler?.user_id;
+
+  const travelerName =
+    flight?.passenger?.name || 'Traveler';
+
+  const departureCity =
+    flight?.departure_airport_city ||
+    flight?.departure ||
+    '--';
+
+  const destinationCity =
+    flight?.destination_airport_city ||
+    flight?.destination ||
+    '--';
+
+  const availableSpace = Math.max(
+    0,
+    Number(flight?.available_space_in_kg) || 0,
+  );
+
+  const allowedItems = String(flight?.allowed_items || 'both')
+    .trim()
+    .toLowerCase();
+
+  /*
+  |--------------------------------------------------------------------------
+  | Helpers
+  |--------------------------------------------------------------------------
+  */
+
+  const showError = text => {
+    Toast.show({
+      type: 'error',
+      text1: text || 'Something went wrong. Please try again.',
+    });
+  };
+
+  const showSuccess = text => {
+    Toast.show({
+      type: 'success',
+      text1: text,
+    });
+  };
+
+  const getBackendError = error => {
+    return (
+      error?.response?.data?.error ||
+      error?.response?.data?.msg ||
+      error?.response?.data?.message ||
+      error?.message ||
+      'Something went wrong. Please try again.'
+    );
+  };
+
+  const formatDate = value => {
+    if (!value) {
+      return '--';
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return '--';
+    }
+
+    return date.toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+    });
+  };
+
+  const isTypeAllowed = type => {
+    if (allowedItems === 'both') {
+      return true;
+    }
+
+    return allowedItems === type;
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Weight
+  |--------------------------------------------------------------------------
+  */
+
+  const weightInGrams = useMemo(() => {
+    const value = Number(weight);
+
+    if (!Number.isFinite(value) || value <= 0) {
+      return 0;
+    }
+
+    // Document input = grams
+    if (itemType === 'document') {
+      return Math.round(value);
+    }
+
+    // Parcel input = kg
+    return Math.round(value * 1000);
+  }, [weight, itemType]);
+
+  const requestedWeightKg = weightInGrams / 1000;
+
+  /*
+  |--------------------------------------------------------------------------
+  | Item Type
+  |--------------------------------------------------------------------------
+  */
+
+  const selectItemType = type => {
+    if (!isTypeAllowed(type)) {
       return;
     }
 
-    const getPriceByWeight = w => {
-      // DOCUMENT PRICING
-      if (itemType === 'Document') {
-        if (w / 100 <= 0.4) return 10; // Doc-400g
-        if (w / 100 <= 1) return 15; // 401g–1kg
-        if (w / 100 <= 2) return 18;
-        if (w / 100 <= 3) return 26;
-        if (w / 100 <= 4) return 34;
-        if (w / 100 <= 5) return 42;
-        return 50; // fallback for docs above range (optional)
-      }
+    setItemType(type);
+    setWeight('');
+    setQuote(null);
 
-      // PARCEL PRICING
-      if (w <= 5) return 42; // 4.1–5kg (if non-doc fallback)
-      if (w <= 6) return 50;
-      if (w <= 7) return 58;
-      if (w <= 8) return 66;
-      if (w <= 9) return 74;
-      if (w <= 10) return 82;
-      if (w <= 11) return 100;
-      if (w <= 12) return 108;
-      if (w <= 13) return 116;
-      if (w <= 14) return 124;
-      if (w <= 15) return 132;
-      if (w <= 16) return 140;
-      if (w <= 17) return 148;
-      if (w <= 18) return 156;
-      if (w <= 19) return 164;
-      if (w <= 20) return 172;
-      if (w <= 21) return 180;
-      if (w <= 22) return 188;
-      if (w <= 23) return 196;
+    setErrors(previous => ({
+      ...previous,
+      itemType: '',
+      weight: '',
+    }));
 
-      return 0; // out of range
-    };
-
-    setPrice(getPriceByWeight(w));
-  }, [weight, itemType]);
-
-  const toggleParcelType = type => {
-    if (selectedParcelTypes.includes(type)) {
-      setSelectedParcelTypes(selectedParcelTypes.filter(t => t !== type));
-    } else {
-      setSelectedParcelTypes([...selectedParcelTypes, type]);
+    if (type === 'document') {
+      setSelectedParcelTypes([]);
+      setOtherParcelType('');
     }
   };
 
-  const { loading, setLoading } = useContext(LOADING);
-  const { userData, setUserData } = useContext(USER);
+  useEffect(() => {
+    if (allowedItems === 'document') {
+      setItemType('document');
+    } else if (allowedItems === 'parcel') {
+      setItemType('parcel');
+    }
+  }, [allowedItems]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Categories
+  |--------------------------------------------------------------------------
+  */
+
+  const toggleParcelType = type => {
+    setQuote(null);
+
+    setSelectedParcelTypes(previous => {
+      if (previous.includes(type)) {
+        return previous.filter(item => item !== type);
+      }
+
+      return [...previous, type];
+    });
+
+    setErrors(previous => ({
+      ...previous,
+      parcelTypes: '',
+    }));
+
+    if (type === 'Others' && selectedParcelTypes.includes(type)) {
+      setOtherParcelType('');
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Validation
+  |--------------------------------------------------------------------------
+  */
+
+  const validateQuoteData = () => {
+    const nextErrors = {};
+
+    if (!flightId) {
+      nextErrors.flight = 'Flight information is unavailable.';
+    }
+
+    if (!travelerId) {
+      nextErrors.traveler = 'Traveler information is unavailable.';
+    }
+
+    if (!isTypeAllowed(itemType)) {
+      nextErrors.itemType =
+        `This traveler is not accepting ${itemType} items.`;
+    }
+
+    if (itemType === 'parcel' && selectedParcelTypes.length === 0) {
+      nextErrors.parcelTypes =
+        'Select at least one parcel category.';
+    }
+
+    if (
+      itemType === 'parcel' &&
+      selectedParcelTypes.includes('Others') &&
+      !otherParcelType.trim()
+    ) {
+      nextErrors.otherParcelType =
+        'Please enter the parcel category.';
+    }
+
+    if (!weight.trim()) {
+      nextErrors.weight = 'Weight is required.';
+    } else if (weightInGrams <= 0) {
+      nextErrors.weight = 'Enter a valid weight.';
+    } else if (requestedWeightKg > availableSpace) {
+      nextErrors.weight =
+        `Traveler has only ${availableSpace} kg available.`;
+    }
+
+    setErrors(previous => ({
+      ...previous,
+      ...nextErrors,
+    }));
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const validateRequest = () => {
+    if (!validateQuoteData()) {
+      return false;
+    }
+
+    const nextErrors = {};
+
+    if (!receiverName.trim()) {
+      nextErrors.receiverName = 'Receiver name is required.';
+    }
+
+    if (!receiverPhone.trim()) {
+      nextErrors.receiverPhone = 'Receiver phone number is required.';
+    }
+
+    if (!message.trim()) {
+      nextErrors.message = 'Message is required.';
+    }
+
+    setErrors(previous => ({
+      ...previous,
+      ...nextErrors,
+    }));
+
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Payload
+  |--------------------------------------------------------------------------
+  */
+
+  const getBasePayload = () => {
+    return {
+      flight_id: flightId,
+      passenger_id: travelerId,
+
+      item_type: itemType,
+
+      parcel_types:
+        itemType === 'parcel'
+          ? selectedParcelTypes.map(item => item.toLowerCase())
+          : [],
+
+      other_parcel_type:
+        itemType === 'parcel' &&
+        selectedParcelTypes.includes('Others')
+          ? otherParcelType.trim()
+          : '',
+
+      weight_in_grams: weightInGrams,
+    };
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Quote
+  |--------------------------------------------------------------------------
+  */
+
+  const getQuote = async () => {
+    if (!validateQuoteData()) {
+      return;
+    }
+
+    try {
+      setQuoteLoading(true);
+      setQuote(null);
+
+      const token = await AsyncStorage.getItem('usertoken');
+
+      if (!token) {
+        showError('Your session has expired. Please login again.');
+        return;
+      }
+
+      const response = await axios.post(
+        `${BASE_API_URI}/request/quote`,
+        getBasePayload(),
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      const quoteData =
+        response?.data?.quote ||
+        response?.data?.data?.quote ||
+        response?.data?.data ||
+        response?.data;
+
+      setQuote(quoteData);
+    } catch (error) {
+      console.log(
+        'REQUEST QUOTE ERROR:',
+        error?.response?.data || error?.message || error,
+      );
+
+      showError(getBackendError(error));
+    } finally {
+      setQuoteLoading(false);
+    }
+  };
+
+  /*
+  |--------------------------------------------------------------------------
+  | Reset quote when quote-affecting data changes
+  |--------------------------------------------------------------------------
+  */
+
+  useEffect(() => {
+    setQuote(null);
+  }, [
+    itemType,
+    weight,
+    selectedParcelTypes,
+    otherParcelType,
+  ]);
+
+  /*
+  |--------------------------------------------------------------------------
+  | Send Request
+  |--------------------------------------------------------------------------
+  */
+
+  const handleSendRequest = async () => {
+  if (!validateRequest()) {
+    return;
+  }
+
+  /*
+   * Quote must correspond to the current item/weight.
+   */
+  if (!quote) {
+    showError('Please calculate the price first.');
+    return;
+  }
+
+  try {
+    setSubmitting(true);
+
+    const token = await AsyncStorage.getItem('usertoken');
+
+    if (!token) {
+      showError('Your session has expired. Please login again.');
+      return;
+    }
+
+    const payload = {
+      ...getBasePayload(),
+
+      receiver: {
+        name: receiverName.trim(),
+        phone_number: receiverPhone.trim(),
+      },
+
+      message: message.trim(),
+    };
+
+    const response = await axios.post(
+      `${BASE_API_URI}/request`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    console.log(
+      'CREATE REQUEST RESPONSE:',
+      response?.data,
+    );
+
+    /*
+     * Backend response se created request nikalo.
+     */
+    const createdRequest =
+      response?.data?.request ||
+      response?.data?.data?.request ||
+      response?.data?.data ||
+      {};
+
+    showSuccess(
+      response?.data?.msg ||
+        response?.data?.message ||
+        'Request sent successfully.',
+    );
+
+    /*
+     * Back jane ke bajaye separate
+     * RequestSuccess screen open hogi.
+     */
+    navigation.replace('RequestSuccess', {
+      request: createdRequest,
+      flight,
+    });
+  } catch (error) {
+    console.log(
+      'CREATE REQUEST ERROR:',
+      error?.response?.data ||
+        error?.message ||
+        error,
+    );
+
+    showError(getBackendError(error));
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+  /*
+  |--------------------------------------------------------------------------
+  | Quote values
+  |--------------------------------------------------------------------------
+  */
+
+  const quoteAmount =
+    quote?.amount ??
+    quote?.price ??
+    0;
+
+  const platformFee =
+    quote?.platform_fee ?? 0;
+
+  const totalAmount =
+    quote?.total_amount ??
+    quote?.total ??
+    quoteAmount + platformFee;
+
+  const currency = String(
+    quote?.currency || 'usd',
+  ).toUpperCase();
+
+  /*
+  |--------------------------------------------------------------------------
+  | UI
+  |--------------------------------------------------------------------------
+  */
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
-      <View style={{ paddingHorizontal: 15 }}>
-        <BackBar title="New Parcel request" />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#0B121C"
+      />
+
+      <View style={styles.header}>
+        <BackBar title="Send Request" />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <View style={styles.progressInfo}>
-            <Text style={styles.stepText}>Step {step} of 3</Text>
-            {/* <Text style={styles.stepName}>Details & Destination</Text> */}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Selected Traveler */}
+
+        <View style={styles.tripCard}>
+          <View style={styles.travelerRow}>
+            <View style={styles.avatar}>
+              <Ionicons
+                name="person-outline"
+                size={21}
+                color="#55A9FF"
+              />
+            </View>
+
+            <View style={styles.travelerInfo}>
+              <Text style={styles.smallLabel}>
+                SENDING WITH
+              </Text>
+
+              <Text
+                numberOfLines={1}
+                style={styles.travelerName}
+              >
+                {travelerName}
+              </Text>
+            </View>
+
+            <View style={styles.spaceBadge}>
+              <Text style={styles.spaceBadgeText}>
+                {availableSpace} kg
+              </Text>
+            </View>
           </View>
-          <View style={styles.progressBarBg}>
-            <View style={[styles.progressBarFill, { width: '33%' }]} />
+
+          <View style={styles.routeRow}>
+            <View style={styles.routeSide}>
+              <Text
+                numberOfLines={1}
+                style={styles.routeCity}
+              >
+                {departureCity}
+              </Text>
+
+              <Text style={styles.routeTime}>
+                {flight?.departure_time || '--'}
+              </Text>
+            </View>
+
+            <View style={styles.routeMiddle}>
+              <View style={styles.routeLine} />
+
+              <View style={styles.planeCircle}>
+                <Ionicons
+                  name="airplane"
+                  size={14}
+                  color="#55A9FF"
+                />
+              </View>
+
+              <View style={styles.routeLine} />
+            </View>
+
+            <View
+              style={[
+                styles.routeSide,
+                styles.routeRight,
+              ]}
+            >
+              <Text
+                numberOfLines={1}
+                style={styles.routeCity}
+              >
+                {destinationCity}
+              </Text>
+
+              <Text style={styles.routeTime}>
+                {flight?.arrival_time || '--'}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.tripFooter}>
+            <View style={styles.tripMeta}>
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="#72869B"
+              />
+
+              <Text style={styles.tripMetaText}>
+                {formatDate(flight?.travel_date)}
+              </Text>
+            </View>
+
+            {flight?.airline_name ? (
+              <View style={styles.tripMeta}>
+                <Ionicons
+                  name="airplane-outline"
+                  size={14}
+                  color="#72869B"
+                />
+
+                <Text
+                  numberOfLines={1}
+                  style={styles.tripMetaText}
+                >
+                  {flight.airline_name}
+                </Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
-        {/* <Text style={styles.mainTitle}>Where is this package going?</Text>
-        <Text style={styles.subTitle}>
-          We connect you with verified travelers heading to your destination.
-        </Text> */}
+        {/* Item Details */}
 
-        {/* <View style={styles.badgeRow}>
-          <View style={styles.secureBadge}>
-            <Ionicons name="shield-checkmark" size={14} color="#10b981" />
-            <Text style={styles.secureText}>Secure & Verified Carriers</Text>
-          </View>
-        </View> */}
+        <Text style={styles.sectionTitle}>
+          What are you sending?
+        </Text>
 
-        {/* --- CUSTOM PARCEL DETAILS SECTION --- */}
-        <View style={styles.section}>
-          <Text style={styles.inputLabel}>The item you're sending</Text>
-          <View style={styles.typeSelectorRow}>
-            {['Document', 'Parcel'].map(t => (
-              <TouchableOpacity
-                key={t}
-                style={[styles.typeBtn, itemType === t && styles.typeBtnActive]}
-                onPress={() => {
-                  setItemType(t);
-                  setWeight('');
-                }}
-              >
-                <Text
-                  style={[
-                    styles.typeBtnText,
-                    itemType === t && styles.typeBtnTextActive,
-                  ]}
-                >
-                  {t}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+        <View style={styles.typeRow}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={!isTypeAllowed('document')}
+            onPress={() => selectItemType('document')}
+            style={[
+              styles.typeButton,
+              itemType === 'document' && styles.typeButtonActive,
+              !isTypeAllowed('document') && styles.typeButtonDisabled,
+            ]}
+          >
+            <View
+              style={[
+                styles.typeIcon,
+                itemType === 'document' && styles.typeIconActive,
+              ]}
+            >
+              <Ionicons
+                name="document-text-outline"
+                size={22}
+                color={
+                  itemType === 'document'
+                    ? '#FFFFFF'
+                    : '#7F94AA'
+                }
+              />
+            </View>
 
-          {itemType === 'Parcel' && (
-            <View style={styles.parcelTypeGrid}>
-              {PARCEL_TYPES.map(p => (
-                <TouchableOpacity
-                  key={p}
-                  style={[
-                    styles.chip,
-                    selectedParcelTypes.includes(p) && styles.chipActive,
-                  ]}
-                  onPress={() => toggleParcelType(p)}
-                >
-                  <Text
+            <Text
+              style={[
+                styles.typeTitle,
+                itemType === 'document' && styles.typeTitleActive,
+              ]}
+            >
+              Document
+            </Text>
+
+            <Text style={styles.typeSubtitle}>
+              Papers & files
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            activeOpacity={0.8}
+            disabled={!isTypeAllowed('parcel')}
+            onPress={() => selectItemType('parcel')}
+            style={[
+              styles.typeButton,
+              itemType === 'parcel' && styles.typeButtonActive,
+              !isTypeAllowed('parcel') && styles.typeButtonDisabled,
+            ]}
+          >
+            <View
+              style={[
+                styles.typeIcon,
+                itemType === 'parcel' && styles.typeIconActive,
+              ]}
+            >
+              <Ionicons
+                name="cube-outline"
+                size={22}
+                color={
+                  itemType === 'parcel'
+                    ? '#FFFFFF'
+                    : '#7F94AA'
+                }
+              />
+            </View>
+
+            <Text
+              style={[
+                styles.typeTitle,
+                itemType === 'parcel' && styles.typeTitleActive,
+              ]}
+            >
+              Parcel
+            </Text>
+
+            <Text style={styles.typeSubtitle}>
+              Package & goods
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {errors.itemType ? (
+          <Text style={styles.errorText}>
+            {errors.itemType}
+          </Text>
+        ) : null}
+
+        {/* Parcel Categories */}
+
+        {itemType === 'parcel' ? (
+          <>
+            <Text style={styles.fieldHeading}>
+              Parcel Category
+              <Text style={styles.required}> *</Text>
+            </Text>
+
+            <Text style={styles.helperText}>
+              Select all categories that apply.
+            </Text>
+
+            <View style={styles.chipContainer}>
+              {PARCEL_TYPES.map(type => {
+                const selected =
+                  selectedParcelTypes.includes(type);
+
+                return (
+                  <TouchableOpacity
+                    key={type}
+                    activeOpacity={0.8}
+                    onPress={() => toggleParcelType(type)}
                     style={[
-                      styles.chipText,
-                      selectedParcelTypes.includes(p) && styles.chipTextActive,
+                      styles.chip,
+                      selected && styles.chipActive,
                     ]}
                   >
-                    {p}
+                    {selected ? (
+                      <Ionicons
+                        name="checkmark"
+                        size={13}
+                        color="#FFFFFF"
+                      />
+                    ) : null}
+
+                    <Text
+                      style={[
+                        styles.chipText,
+                        selected && styles.chipTextActive,
+                      ]}
+                    >
+                      {type}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {errors.parcelTypes ? (
+              <Text style={styles.errorText}>
+                {errors.parcelTypes}
+              </Text>
+            ) : null}
+
+            {selectedParcelTypes.includes('Others') ? (
+              <Input
+                label="Other Category"
+                placeholder="Enter parcel category"
+                value={otherParcelType}
+                onChangeText={value => {
+                  setOtherParcelType(value);
+
+                  setErrors(previous => ({
+                    ...previous,
+                    otherParcelType: '',
+                  }));
+                }}
+                icon="create-outline"
+                required
+                error={errors.otherParcelType}
+              />
+            ) : null}
+          </>
+        ) : null}
+
+        {/* Weight */}
+
+        <Input
+          label={
+            itemType === 'document'
+              ? 'Weight (grams)'
+              : 'Weight (kg)'
+          }
+          placeholder={
+            itemType === 'document'
+              ? 'e.g. 200'
+              : 'e.g. 2.5'
+          }
+          value={weight}
+          onChangeText={value => {
+            setWeight(value);
+
+            setErrors(previous => ({
+              ...previous,
+              weight: '',
+            }));
+          }}
+          keyboardType="decimal-pad"
+          icon="scale-outline"
+          required
+          error={errors.weight}
+        />
+
+        <View style={styles.weightHint}>
+          <Ionicons
+            name="information-circle-outline"
+            size={15}
+            color="#71869C"
+          />
+
+          <Text style={styles.weightHintText}>
+            Traveler currently has {availableSpace} kg available.
+          </Text>
+        </View>
+
+        {/* Quote */}
+
+        <View style={styles.quoteSection}>
+          {!quote ? (
+            <TouchableOpacity
+              activeOpacity={0.85}
+              disabled={quoteLoading}
+              onPress={getQuote}
+              style={styles.quoteButton}
+            >
+              {quoteLoading ? (
+                <ActivityIndicator
+                  size="small"
+                  color="#55A9FF"
+                />
+              ) : (
+                <>
+                  <Ionicons
+                    name="calculator-outline"
+                    size={18}
+                    color="#55A9FF"
+                  />
+
+                  <Text style={styles.quoteButtonText}>
+                    Calculate Price
                   </Text>
-                </TouchableOpacity>
-              ))}
+                </>
+              )}
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.priceCard}>
+              <View style={styles.priceHeader}>
+                <View>
+                  <Text style={styles.priceEyebrow}>
+                    PRICE QUOTE
+                  </Text>
+
+                  <Text style={styles.priceTitle}>
+                    Request Price
+                  </Text>
+                </View>
+
+                <View style={styles.quoteReady}>
+                  <Ionicons
+                    name="checkmark-circle"
+                    size={15}
+                    color="#22C55E"
+                  />
+
+                  <Text style={styles.quoteReadyText}>
+                    Calculated
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabel}>
+                  Parcel price
+                </Text>
+
+                <Text style={styles.priceValue}>
+                  {currency} {Number(quoteAmount || 0).toFixed(2)}
+                </Text>
+              </View>
+
+              {Number(platformFee) > 0 ? (
+                <View style={styles.priceRow}>
+                  <Text style={styles.priceLabel}>
+                    Platform fee
+                  </Text>
+
+                  <Text style={styles.priceValue}>
+                    {currency} {Number(platformFee).toFixed(2)}
+                  </Text>
+                </View>
+              ) : null}
+
+              <View style={styles.priceDivider} />
+
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>
+                  Total
+                </Text>
+
+                <Text style={styles.totalValue}>
+                  {currency} {Number(totalAmount || 0).toFixed(2)}
+                </Text>
+              </View>
             </View>
           )}
-
-          <Text style={styles.inputLabel}>
-            Weight ({itemType === 'Document' ? 'g' : 'kg'})
-          </Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={styles.input}
-              placeholder={itemType === 'Document' ? 'e.g. 200' : 'e.g. 8'}
-              placeholderTextColor="#64748b"
-              keyboardType="numeric"
-              value={weight}
-              onChangeText={setWeight}
-            />
-            <Text style={styles.priceTag}>£{price}</Text>
-          </View>
         </View>
 
-        {/* Destination Field */}
-        <View style={styles.section}>
-          <Text style={styles.inputLabel}>Destination City</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons
-              name="airplane"
-              size={20}
-              color="#64748b"
-              style={{ marginRight: 10 }}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter city or airport code (e.g., London)"
-              placeholderTextColor="#64748b"
-              value={destination}
-              onChangeText={setDestination}
-            />
-            <Ionicons name="locate" size={20} color="#1E90FF" />
-          </View>
-        </View>
+        {/* Receiver */}
 
-        <Text style={styles.sectionHeading}>POPULAR DESTINATIONS</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.popularList}
-        >
-          {POPULAR_DESTINATIONS.map(item => (
-            <TouchableOpacity key={item.id} style={styles.popCard}>
-              <View style={styles.popIconCircle}>
-                <Ionicons name={item.icon} size={24} color="#1E90FF" />
-              </View>
-              <Text style={styles.popName}>{item.name}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        <Text style={styles.sectionTitle}>
+          Receiver Details
+        </Text>
 
-        <Text style={styles.sectionHeading}>RECENT SEARCHES</Text>
-        <TouchableOpacity style={styles.recentItem}>
-          <View style={styles.recentCircle}>
-            <Ionicons name="time-outline" size={18} color="#94a3b8" />
-          </View>
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={styles.recentTitle}>Toronto, Canada</Text>
-            <Text style={styles.recentSub}>YYZ • Pearson Intl</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color="#475569" />
-        </TouchableOpacity>
-      </ScrollView>
+        <Input
+          label="Receiver Full Name"
+          placeholder="Enter receiver name"
+          value={receiverName}
+          onChangeText={value => {
+            setReceiverName(value);
 
-      {/* Footer Button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('ReceiverDetails')}
-          style={styles.continueBtn}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.continueText}>Send Request</Text>
+            setErrors(previous => ({
+              ...previous,
+              receiverName: '',
+            }));
+          }}
+          icon="person-outline"
+          required
+          error={errors.receiverName}
+        />
+
+        <Input
+          label="Receiver Phone Number"
+          placeholder="Enter receiver phone number"
+          value={receiverPhone}
+          onChangeText={value => {
+            setReceiverPhone(value);
+
+            setErrors(previous => ({
+              ...previous,
+              receiverPhone: '',
+            }));
+          }}
+          keyboardType="phone-pad"
+          icon="call-outline"
+          required
+          error={errors.receiverPhone}
+        />
+
+        {/* Message */}
+
+        <Text style={styles.sectionTitle}>
+          Message
+        </Text>
+
+        <Input
+          label="Message to Traveler"
+          placeholder="Enter message"
+          value={message}
+          onChangeText={value => {
+            setMessage(value);
+
+            setErrors(previous => ({
+              ...previous,
+              message: '',
+            }));
+          }}
+          multiline
+          numberOfLines={4}
+          required
+          error={errors.message}
+        />
+
+        <View style={styles.messageNote}>
           <Ionicons
-            name="arrow-forward"
-            size={20}
-            color="#fff"
-            style={{ marginLeft: 8 }}
+            name="information-circle-outline"
+            size={16}
+            color="#55A9FF"
           />
-        </TouchableOpacity>
-      </View>
+
+          <Text style={styles.messageNoteText}>
+            For safety, avoid writing specific valuable product names in parcel
+            details.
+          </Text>
+        </View>
+
+        {/* Main Button */}
+
+        <View style={styles.buttonContainer}>
+          <Button
+            text="Send Request"
+            icon="paper-plane-outline"
+            loading={submitting}
+            disabled={submitting || quoteLoading}
+            onPress={handleSendRequest}
+          />
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
+export default NewParcelRequest;
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B121C' },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 60,
+  container: {
+    flex: 1,
+    backgroundColor: '#0B121C',
   },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-  scrollContent: { padding: 20, paddingBottom: 100 },
-  progressContainer: { marginBottom: 30 },
-  progressInfo: {
+
+  header: {
+    paddingHorizontal: 15,
+  },
+
+  scrollContent: {
+    paddingHorizontal: 18,
+    paddingTop: 10,
+    paddingBottom: 40,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Trip
+  |--------------------------------------------------------------------------
+  */
+
+  tripCard: {
+    backgroundColor: '#101B2A',
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: '#1D3046',
+    padding: 15,
+    marginBottom: 25,
+  },
+
+  travelerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  avatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 13,
+    backgroundColor: 'rgba(39,142,245,0.10)',
+    borderWidth: 1,
+    borderColor: 'rgba(85,169,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  travelerInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+
+  smallLabel: {
+    color: '#5D7188',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+
+  travelerName: {
+    color: '#F1F6FC',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+
+  spaceBadge: {
+    backgroundColor: 'rgba(34,197,94,0.08)',
+    borderRadius: 9,
+    paddingHorizontal: 9,
+    paddingVertical: 6,
+  },
+
+  spaceBadgeText: {
+    color: '#35C976',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+
+  routeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingVertical: 13,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#1B2C40',
+  },
+
+  routeSide: {
+    width: '31%',
+  },
+
+  routeRight: {
+    alignItems: 'flex-end',
+  },
+
+  routeCity: {
+    color: '#EDF4FB',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+
+  routeTime: {
+    color: '#71869C',
+    fontSize: 9,
+    marginTop: 4,
+  },
+
+  routeMiddle: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+  },
+
+  routeLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#29415C',
+  },
+
+  planeCircle: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    backgroundColor: '#0C1725',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 5,
+  },
+
+  tripFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    paddingTop: 11,
+  },
+
+  tripMeta: {
+    maxWidth: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  tripMetaText: {
+    flexShrink: 1,
+    color: '#71869C',
+    fontSize: 9,
+    marginLeft: 5,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Sections
+  |--------------------------------------------------------------------------
+  */
+
+  sectionTitle: {
+    color: '#4DA4FA',
+    fontSize: 17,
+    fontWeight: '800',
+    marginTop: 5,
+    marginBottom: 14,
+  },
+
+  fieldHeading: {
+    color: '#E9EFF7',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+
+  required: {
+    color: '#FF6B6B',
+  },
+
+  helperText: {
+    color: '#667B91',
+    fontSize: 10,
+    marginBottom: 11,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Item Type
+  |--------------------------------------------------------------------------
+  */
+
+  typeRow: {
+    flexDirection: 'row',
+    gap: 11,
+    marginBottom: 20,
+  },
+
+  typeButton: {
+    flex: 1,
+    minHeight: 112,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#1D3046',
+    backgroundColor: '#101B2A',
+    padding: 13,
+  },
+
+  typeButtonActive: {
+    borderColor: '#278EF5',
+    backgroundColor: 'rgba(39,142,245,0.08)',
+  },
+
+  typeButtonDisabled: {
+    opacity: 0.35,
+  },
+
+  typeIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#172536',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
   },
-  stepText: { color: '#1E90FF', fontSize: 12, fontWeight: 'bold' },
-  stepName: { color: '#94a3b8', fontSize: 12 },
-  progressBarBg: { height: 4, backgroundColor: '#1e293b', borderRadius: 2 },
-  progressBarFill: {
-    height: '100%',
-    backgroundColor: '#1E90FF',
-    borderRadius: 2,
+
+  typeIconActive: {
+    backgroundColor: '#2187ED',
   },
-  mainTitle: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 40,
+
+  typeTitle: {
+    color: '#A5B5C6',
+    fontSize: 13,
+    fontWeight: '800',
   },
-  subTitle: { color: '#94a3b8', fontSize: 16, marginTop: 12, lineHeight: 24 },
-  badgeRow: { marginTop: 20, marginBottom: 30 },
-  secureBadge: {
+
+  typeTitleActive: {
+    color: '#F3F8FD',
+  },
+
+  typeSubtitle: {
+    color: '#63778C',
+    fontSize: 9,
+    marginTop: 3,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Categories
+  |--------------------------------------------------------------------------
+  */
+
+  chipContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 7,
+  },
+
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    alignSelf: 'flex-start',
+    backgroundColor: '#101B2A',
     borderWidth: 1,
-    borderColor: 'rgba(16, 185, 129, 0.2)',
+    borderColor: '#25384C',
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    borderRadius: 9,
+    marginRight: 7,
+    marginBottom: 8,
+    gap: 4,
   },
-  secureText: {
-    color: '#10b981',
-    fontSize: 13,
-    marginLeft: 6,
+
+  chipActive: {
+    backgroundColor: '#2187ED',
+    borderColor: '#2187ED',
+  },
+
+  chipText: {
+    color: '#8195AA',
+    fontSize: 10,
     fontWeight: '600',
   },
-  section: { marginBottom: 24 },
-  inputLabel: {
-    color: '#ffffffde',
-    fontSize: 14,
-    marginBottom: 10,
-    fontWeight: '500',
-  },
-  typeSelectorRow: { flexDirection: 'row', marginBottom: 15 },
-  typeBtn: {
-    flex: 1,
-    height: 45,
-    backgroundColor: '#1e293b',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
-  },
-  typeBtnActive: { backgroundColor: '#1E90FF' },
-  typeBtnText: { color: '#94a3b8', fontWeight: '600' },
-  typeBtnTextActive: { color: '#fff' },
-  parcelTypeGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 15 },
-  chip: {
-    backgroundColor: '#1e293b',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginRight: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  chipActive: {
-    borderColor: '#1E90FF',
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-  },
-  chipText: { color: '#94a3b8', fontSize: 12 },
-  chipTextActive: { color: '#1E90FF', fontWeight: 'bold' },
-  inputWrapper: {
-    backgroundColor: '#1e293b',
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: 56,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  input: { flex: 1, color: '#fff', fontSize: 15 },
-  priceTag: { color: '#10b981', fontWeight: 'bold', fontSize: 16 },
-  sectionHeading: {
-    color: '#94a3b8',
-    fontSize: 12,
-    fontWeight: 'bold',
-    letterSpacing: 1,
-    marginBottom: 15,
-    marginTop: 10,
-  },
-  popularList: { flexDirection: 'row', marginBottom: 30 },
-  popCard: {
-    backgroundColor: '#1e293b',
-    width: 100,
-    height: 110,
-    borderRadius: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  popIconCircle: {
-    width: 44,
-    height: 44,
-    backgroundColor: 'rgba(59, 130, 246, 0.1)',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  popName: { color: '#fff', fontSize: 13, fontWeight: '600' },
-  recentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  recentCircle: {
-    width: 40,
-    height: 40,
-    backgroundColor: '#1e293b',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  recentTitle: { color: '#fff', fontSize: 15, fontWeight: '600' },
-  recentSub: { color: '#64748b', fontSize: 12, marginTop: 2 },
-  footer: {
-    position: 'absolute',
-    bottom: 0,
-    width: '100%',
-    padding: 20,
-    backgroundColor: '#0a101d',
-    borderTopWidth: 1,
-    borderTopColor: '#1e293b',
-  },
-  continueBtn: {
-    backgroundColor: '#1E90FF',
-    height: 56,
-    borderRadius: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  continueText: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-});
 
-export default NewParcelRequest;
+  chipTextActive: {
+    color: '#FFFFFF',
+  },
+
+  errorText: {
+    color: '#FF6B6B',
+    fontSize: 10,
+    marginTop: -2,
+    marginBottom: 10,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Weight
+  |--------------------------------------------------------------------------
+  */
+
+  weightHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -5,
+    marginBottom: 21,
+    paddingHorizontal: 2,
+  },
+
+  weightHintText: {
+    flex: 1,
+    color: '#71869C',
+    fontSize: 9,
+    marginLeft: 5,
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Quote
+  |--------------------------------------------------------------------------
+  */
+
+  quoteSection: {
+    marginBottom: 27,
+  },
+
+  quoteButton: {
+    minHeight: 50,
+    borderRadius: 12,
+    backgroundColor: '#101B2A',
+    borderWidth: 1,
+    borderColor: '#24415E',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 7,
+  },
+
+  quoteButtonText: {
+    color: '#55A9FF',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+
+  priceCard: {
+    backgroundColor: '#101B2A',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#1D3046',
+    padding: 15,
+  },
+
+  priceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+
+  priceEyebrow: {
+    color: '#536A82',
+    fontSize: 8,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+
+  priceTitle: {
+    color: '#EDF4FB',
+    fontSize: 14,
+    fontWeight: '800',
+    marginTop: 3,
+  },
+
+  quoteReady: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  quoteReadyText: {
+    color: '#22C55E',
+    fontSize: 9,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 9,
+  },
+
+  priceLabel: {
+    color: '#70859A',
+    fontSize: 10,
+  },
+
+  priceValue: {
+    color: '#C9D6E3',
+    fontSize: 10,
+    fontWeight: '700',
+  },
+
+  priceDivider: {
+    height: 1,
+    backgroundColor: '#1E3044',
+    marginVertical: 5,
+  },
+
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 8,
+  },
+
+  totalLabel: {
+    color: '#E7EFF7',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  totalValue: {
+    color: '#55A9FF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+
+  /*
+  |--------------------------------------------------------------------------
+  | Message
+  |--------------------------------------------------------------------------
+  */
+
+  messageNote: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(39,142,245,0.06)',
+    borderRadius: 11,
+    borderWidth: 1,
+    borderColor: 'rgba(85,169,255,0.13)',
+    padding: 11,
+    marginTop: -5,
+  },
+
+  messageNoteText: {
+    flex: 1,
+    color: '#71869C',
+    fontSize: 9,
+    lineHeight: 14,
+    marginLeft: 7,
+  },
+
+  buttonContainer: {
+    marginTop: 27,
+  },
+});

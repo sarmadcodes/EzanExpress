@@ -1,4 +1,9 @@
-import React, { useContext, useEffect, useRef } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useRef,
+} from 'react';
+
 import {
   View,
   StyleSheet,
@@ -8,103 +13,241 @@ import {
   Easing,
   Text,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+
+import {
+  useNavigation,
+} from '@react-navigation/native';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { BASE_API_URI } from '../constant/API';
 import axios from 'axios';
+
+import { BASE_API_URI } from '../constant/API';
 import { USER } from '../context/User';
 
 const Splashscreen = () => {
   const navigation = useNavigation();
-  const rotateAnim = useRef(new Animated.Value(0)).current;
-  const { userData, setUserData } = useContext(USER);
+
+  const rotateAnim = useRef(
+    new Animated.Value(0),
+  ).current;
+
+  const { setUserData } =
+    useContext(USER);
 
   const CheckLogin = async () => {
-    let token = await AsyncStorage.getItem('usertoken');
-    if (!token) {
-      navigation.reset({
-        index: 0,
-        routes: [{ name: 'WelcomeScreen' }],
-      });
-      return;
-    }
-    axios
-      .get(`${BASE_API_URI}/login`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(data => {
-        setUserData(data.data?.user);
-        if (data?.data?.user?.user_type == 'traveler') {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'TravelerDashboard' }],
-          });
-        } else if (data?.data?.user?.user_type == 'sender') {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'SenderDashboard' }],
-          });
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'RoleScreen' }],
-          });
-        }
-      })
-      .catch(err => {
-        console.log(err)
+    try {
+      const token =
+        await AsyncStorage.getItem(
+          'usertoken',
+        );
+
+      if (!token) {
         navigation.reset({
           index: 0,
-          routes: [{ name: 'WelcomeScreen' }],
+          routes: [
+            {
+              name: 'WelcomeScreen',
+            },
+          ],
         });
+
+        return;
+      }
+
+      const response =
+        await axios.get(
+          `${BASE_API_URI}/login`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          },
+        );
+
+      const user =
+        response?.data?.user;
+
+      if (!user) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'WelcomeScreen',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      setUserData(user);
+
+      /*
+       * No role selected yet
+       */
+      if (!user?.user_type) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'RoleScreen',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      /*
+       * Traveler but onboarding
+       * is NOT complete
+       */
+      if (
+        user.user_type === 'traveler' &&
+        user.is_traveler_verify !== true
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'FlightDetails',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      /*
+       * Traveler onboarding complete
+       */
+      if (
+        user.user_type === 'traveler' &&
+        user.is_traveler_verify === true
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name:
+                'TravelerDashboard',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      /*
+       * Sender
+       */
+      if (
+        user.user_type === 'sender'
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name:
+                'SenderDashboard',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      /*
+       * Safety fallback
+       */
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'RoleScreen',
+          },
+        ],
       });
+    } catch (err) {
+      console.log(
+        'SPLASH LOGIN ERROR:',
+        err?.response?.data ||
+          err?.message ||
+          err,
+      );
+
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'WelcomeScreen',
+          },
+        ],
+      });
+    }
   };
 
   useEffect(() => {
     const spin = () => {
       rotateAnim.setValue(0);
-      Animated.timing(rotateAnim, {
-        toValue: 1,
-        duration: 900, // smooth speed
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }).start(() => spin());
+
+      Animated.timing(
+        rotateAnim,
+        {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        },
+      ).start(() => spin());
     };
 
-    spin(); // start infinite smooth spin
-CheckLogin()
-    // const timer = setTimeout(() => {
-    //   navigation.reset({
-    //     index: 0,
-    //     routes: [{ name: 'WelcomeScreen' }],
-    //   });
-    // }, 2000);
+    spin();
 
-    // return () => clearTimeout(timer);
+    CheckLogin();
   }, []);
 
-  const rotation = rotateAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const rotation =
+    rotateAnim.interpolate({
+      inputRange: [0, 1],
+      outputRange: [
+        '0deg',
+        '360deg',
+      ],
+    });
 
   return (
     <View style={styles.container}>
-      <StatusBar backgroundColor="#fff" barStyle="dark-content" />
+      <StatusBar
+        backgroundColor="#fff"
+        barStyle="dark-content"
+      />
 
-      {/* Logo */}
       <Image
         source={require('../assets/logo1.jpg')}
         style={styles.logo}
         resizeMode="contain"
       />
 
-      {/* Smooth Loader */}
       <Animated.View
-        style={[styles.loader, { transform: [{ rotate: rotation }] }]}
+        style={[
+          styles.loader,
+          {
+            transform: [
+              {
+                rotate: rotation,
+              },
+            ],
+          },
+        ]}
       />
 
-      <Text style={styles.loadingText}>Loading...</Text>
+      <Text
+        style={styles.loadingText}
+      >
+        Loading...
+      </Text>
     </View>
   );
 };
@@ -118,11 +261,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+
   logo: {
     width: 240,
     height: 140,
     marginBottom: 40,
   },
+
   loader: {
     width: 36,
     height: 36,
@@ -131,6 +276,7 @@ const styles = StyleSheet.create({
     borderColor: '#16499B',
     borderTopColor: 'transparent',
   },
+
   loadingText: {
     marginTop: 12,
     color: '#16499B',

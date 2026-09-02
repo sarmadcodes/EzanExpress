@@ -1,140 +1,663 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  Switch,
-  ImageBackground,
+  ActivityIndicator,
+  Image,
+  Pressable,
   SafeAreaView,
-  TouchableOpacity,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
 } from 'react-native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import moment from 'moment';
 
-const TravelDashboard = ({ data }) => {
+import { GEOAPIFY_API_KEY } from '../constant/API';
+
+const TravelDashboard = ({ data, navigation }) => {
   const [isEnabled, setIsEnabled] = useState(true);
+  const [departureCoords, setDepartureCoords] = useState(null);
+  const [destinationCoords, setDestinationCoords] = useState(null);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapError, setMapError] = useState(false);
+
+  const currentFlight = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return null;
+    }
+
+    const activeFlight = data.find(flight => {
+      const verificationStatus = String(
+        flight?.verification_status || '',
+      )
+        .trim()
+        .toLowerCase();
+
+      const tripStatus = String(
+        flight?.trip_status || '',
+      )
+        .trim()
+        .toLowerCase();
+
+      return (
+        verificationStatus === 'approved' &&
+        tripStatus === 'active'
+      );
+    });
+
+    if (activeFlight) {
+      return activeFlight;
+    }
+
+    const upcomingFlights = data
+      .filter(flight => {
+        const verificationStatus = String(
+          flight?.verification_status || '',
+        )
+          .trim()
+          .toLowerCase();
+
+        const tripStatus = String(
+          flight?.trip_status || '',
+        )
+          .trim()
+          .toLowerCase();
+
+        const isUpcoming =
+          flight?.travel_date &&
+          moment(flight.travel_date).isSameOrAfter(
+            moment(),
+            'day',
+          );
+
+        const isFinished = [
+          'completed',
+          'cancelled',
+          'expired',
+        ].includes(tripStatus);
+
+        return (
+          verificationStatus === 'approved' &&
+          !isFinished &&
+          isUpcoming
+        );
+      })
+      .sort(
+        (a, b) =>
+          moment(a.travel_date).valueOf() -
+          moment(b.travel_date).valueOf(),
+      );
+
+    return upcomingFlights[0] || null;
+  }, [data]);
+
+  const departureCity =
+    currentFlight?.departure_airport_city ||
+    currentFlight?.departure ||
+    '';
+
+  const departureCountry =
+    currentFlight?.departure_airport_country || '';
+
+  const destinationCity =
+    currentFlight?.destination_airport_city ||
+    currentFlight?.destination ||
+    '';
+
+  const destinationCountry =
+    currentFlight?.destination_airport_country || '';
+
+  const departureSearch = useMemo(() => {
+    if (!currentFlight) {
+      return '';
+    }
+
+    return [
+      currentFlight?.departure_airport_code,
+      currentFlight?.departure,
+      currentFlight?.departure_airport_city,
+      currentFlight?.departure_airport_country,
+    ]
+      .filter(Boolean)
+      .join(', ');
+  }, [currentFlight]);
+
+  const destinationSearch = useMemo(() => {
+    if (!currentFlight) {
+      return '';
+    }
+
+    return [
+      currentFlight?.destination_airport_code,
+      currentFlight?.destination,
+      currentFlight?.destination_airport_city,
+      currentFlight?.destination_airport_country,
+    ]
+      .filter(Boolean)
+      .join(', ');
+  }, [currentFlight]);
+
+  const getCoordinates = async searchText => {
+    if (!searchText || !GEOAPIFY_API_KEY) {
+      return null;
+    }
+
+    const url =
+      'https://api.geoapify.com/v1/geocode/search' +
+      `?text=${encodeURIComponent(searchText)}` +
+      '&limit=1' +
+      `&apiKey=${encodeURIComponent(GEOAPIFY_API_KEY)}`;
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        `Geocoding failed: ${response.status}`,
+      );
+    }
+
+    const result = await response.json();
+    const location = result?.features?.[0]?.properties;
+
+    if (
+      location?.lat === undefined ||
+      location?.lon === undefined
+    ) {
+      return null;
+    }
+
+    return {
+      lat: Number(location.lat),
+      lon: Number(location.lon),
+    };
+  };
+
+  useEffect(() => {
+    let mounted = true;
+
+    const loadRoute = async () => {
+      if (!currentFlight) {
+        setDepartureCoords(null);
+        setDestinationCoords(null);
+        setMapLoading(false);
+        return;
+      }
+
+      try {
+        setMapLoading(true);
+        setMapError(false);
+
+        const [from, to] = await Promise.all([
+          getCoordinates(departureSearch),
+          getCoordinates(destinationSearch),
+        ]);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (!from || !to) {
+          setMapError(true);
+          return;
+        }
+
+        setDepartureCoords(from);
+        setDestinationCoords(to);
+      } catch (error) {
+        console.log(
+          'GEOAPIFY ERROR:',
+          error?.message || error,
+        );
+
+        if (mounted) {
+          setMapError(true);
+          setDepartureCoords(null);
+          setDestinationCoords(null);
+        }
+      } finally {
+        if (mounted) {
+          setMapLoading(false);
+        }
+      }
+    };
+
+    loadRoute();
+
+    return () => {
+      mounted = false;
+    };
+  }, [
+    currentFlight?._id,
+    departureSearch,
+    destinationSearch,
+  ]);
+
+  const mapUrl = useMemo(() => {
+    if (
+      !departureCoords ||
+      !destinationCoords ||
+      !GEOAPIFY_API_KEY
+    ) {
+      return null;
+    }
+
+    const fromLon = departureCoords.lon;
+    const fromLat = departureCoords.lat;
+
+    const toLon = destinationCoords.lon;
+    const toLat = destinationCoords.lat;
+
+    let adjustedFromLon = fromLon;
+    let adjustedToLon = toLon;
+
+    if (
+      Math.abs(adjustedToLon - adjustedFromLon) >
+      180
+    ) {
+      if (adjustedFromLon < adjustedToLon) {
+        adjustedFromLon += 360;
+      } else {
+        adjustedToLon += 360;
+      }
+    }
+
+    let centerLon =
+      (adjustedFromLon + adjustedToLon) / 2;
+
+    if (centerLon > 180) {
+      centerLon -= 360;
+    }
+
+    if (centerLon < -180) {
+      centerLon += 360;
+    }
+
+    const centerLat = (fromLat + toLat) / 2;
+
+    const lonDifference = Math.abs(
+      adjustedToLon - adjustedFromLon,
+    );
+
+    const latDifference = Math.abs(
+      toLat - fromLat,
+    );
+
+    const maxDifference = Math.max(
+      lonDifference,
+      latDifference,
+    );
+
+    let zoom = 2;
+
+    if (maxDifference < 10) {
+      zoom = 4.5;
+    } else if (maxDifference < 20) {
+      zoom = 3.8;
+    } else if (maxDifference < 35) {
+      zoom = 3.1;
+    } else if (maxDifference < 55) {
+      zoom = 2.6;
+    } else if (maxDifference < 80) {
+      zoom = 2.15;
+    } else if (maxDifference < 110) {
+      zoom = 1.7;
+    } else {
+      zoom = 1.25;
+    }
+
+    const geojson = {
+      type: 'FeatureCollection',
+      features: [
+        {
+          type: 'Feature',
+          properties: {
+            linecolor: '#1E88E5',
+            linewidth: 4,
+            lineopacity: 0.95,
+            linestyle: 'dashed',
+          },
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [fromLon, fromLat],
+              [toLon, toLat],
+            ],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            linecolor: '#1E88E5',
+            linewidth: 2,
+            fillcolor: '#1E88E5',
+            fillopacity: 1,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [fromLon, fromLat],
+          },
+        },
+        {
+          type: 'Feature',
+          properties: {
+            linecolor: '#1E88E5',
+            linewidth: 2,
+            fillcolor: '#1E88E5',
+            fillopacity: 1,
+          },
+          geometry: {
+            type: 'Point',
+            coordinates: [toLon, toLat],
+          },
+        },
+      ],
+    };
+
+    const encodedGeoJson = encodeURIComponent(
+      JSON.stringify(geojson),
+    );
+
+    return (
+      'https://maps.geoapify.com/v1/staticmap' +
+      '?style=osm-bright-grey' +
+      '&width=900' +
+      '&height=500' +
+      '&format=png' +
+      `&center=lonlat:${centerLon},${centerLat}` +
+      `&zoom=${zoom}` +
+      `&geojson=${encodedGeoJson}` +
+      `&apiKey=${encodeURIComponent(
+        GEOAPIFY_API_KEY,
+      )}`
+    );
+  }, [
+    departureCoords,
+    destinationCoords,
+  ]);
+
+  const tripStatus = String(
+    currentFlight?.trip_status || '',
+  )
+    .trim()
+    .toLowerCase();
+
+  const statusText =
+    tripStatus === 'active'
+      ? 'ACTIVE'
+      : 'UPCOMING';
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Travel Status Toggle */}
       <View style={styles.statusCard}>
         <View>
-          <Text style={styles.statusTitle}>Travel Status</Text>
-          <Text style={styles.statusSubtitle}>You are visible to senders</Text>
+          <Text style={styles.statusTitle}>
+            Travel Status
+          </Text>
+
+          <Text style={styles.statusSubtitle}>
+            {isEnabled
+              ? 'You are visible to senders'
+              : 'You are hidden from senders'}
+          </Text>
         </View>
+
         <Switch
-          trackColor={{ false: '#2D3F50', true: '#1E88E5' }}
-          thumbColor={'#FFFFFF'}
-          onValueChange={() => setIsEnabled(previousState => !previousState)}
+          trackColor={{
+            false: '#2D3F50',
+            true: '#1E88E5',
+          }}
+          thumbColor="#FFFFFF"
+          onValueChange={() =>
+            setIsEnabled(previous => !previous)
+          }
           value={isEnabled}
         />
       </View>
 
-      {/* Info Grid (Weight & Bags) */}
       <View style={styles.infoGrid}>
-        <View style={styles.infoBox}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="bag-outline" size={20} color="#1E88E5" />
-          </View>
-          <Text style={styles.infoValue}>10kg</Text>
-          <Text style={styles.infoLabel}>Allowance Left</Text>
-        </View>
+  <View style={styles.infoBox}>
+    <View style={styles.iconCircle}>
+      <Ionicons
+        name="scale-outline"
+        size={20}
+        color="#1E88E5"
+      />
+    </View>
 
-        <View style={styles.infoBox}>
-          <View style={styles.iconCircle}>
-            <Ionicons name="briefcase-outline" size={20} color="#1E88E5" />
-          </View>
-          <Text style={styles.infoValue}>3 Bags</Text>
-          <Text style={styles.infoLabel}>Space Open</Text>
-        </View>
-      </View>
-      {/* <View style={{marginVertical:10}}>
-        <TouchableOpacity style={{padding:15, backgroundColor:'#1E90FF', borderRadius:10,}}>
-          <Text style={{textAlign:'center', color:'#ffffffde', fontSize:16, fontWeight:'600'}}>Update availabe parcel space</Text>
-        </TouchableOpacity>
-      </View> */}
+    <Text style={styles.infoValue}>
+      {currentFlight
+        ? `${currentFlight.available_space_in_kg ?? 0} kg`
+        : '--'}
+    </Text>
 
-      {/* My Trip Section Header */}
+    <Text style={styles.infoLabel}>
+      Available Space
+    </Text>
+  </View>
+
+  <View style={styles.infoBox}>
+    <View style={styles.iconCircle}>
+      <Ionicons
+        name="cube-outline"
+        size={20}
+        color="#1E88E5"
+      />
+    </View>
+
+    <Text style={styles.infoValue}>
+      Space Open
+    </Text>
+
+    <Text style={styles.infoLabel}>
+      Parcel / Document
+    </Text>
+  </View>
+</View>
+
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>My Trip</Text>
-        <Text style={styles.viewDetails}>View Details</Text>
+        <Text style={styles.sectionTitle}>
+          My Trip
+        </Text>
+
+        {currentFlight ? (
+          <Pressable
+            onPress={() =>
+              navigation.navigate('TravelerFlightDetails', {
+                flight: currentFlight,
+              })
+            }
+          >
+            <Text style={styles.viewDetails}>
+              View Details
+            </Text>
+          </Pressable>
+        ) : null}
       </View>
 
-      {/* Flight Ticket Card */}
-      <ImageBackground
-        source={{
-          uri: 'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?q=80&w=500',
-        }}
-        style={styles.flightCard}
-        imageStyle={{ borderRadius: 16, opacity: 0.3 }}
-      >
-        <View style={styles.cardOverlay}>
-          <View style={styles.cardHeader}>
-            <View style={styles.upcomingBadge}>
-              <Text style={styles.upcomingText}>
-                {data?.[0]?.travel_date &&
-                moment(data?.[0]?.travel_date).isAfter(moment(), 'day')
-                  ? 'UPCOMING'
-                  : 'EXPIRED'}
+      {!currentFlight ? (
+        <View style={styles.noFlightCard}>
+          <Ionicons
+            name="airplane-outline"
+            size={27}
+            color="#7AA2C5"
+          />
+
+          <Text style={styles.noFlightTitle}>
+            No active trip
+          </Text>
+
+          <Text style={styles.noFlightText}>
+            Your approved flight will appear here.
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.flightCard}>
+          {mapLoading ? (
+            <View style={styles.mapLoading}>
+              <ActivityIndicator
+                color="#1E88E5"
+              />
+            </View>
+          ) : mapUrl && !mapError ? (
+            <Image
+              source={{ uri: mapUrl }}
+              style={styles.mapImage}
+              resizeMode="cover"
+              onError={event => {
+                console.log(
+                  'MAP IMAGE ERROR:',
+                  event?.nativeEvent?.error,
+                );
+                setMapError(true);
+              }}
+            />
+          ) : (
+            <View style={styles.mapFallback}>
+              <Ionicons
+                name="map-outline"
+                size={32}
+                color="#39536B"
+              />
+            </View>
+          )}
+
+          <View
+            pointerEvents="none"
+            style={styles.mapTint}
+          />
+
+          <View style={styles.topRow}>
+            <View style={styles.statusBadge}>
+              <View
+                style={[
+                  styles.statusDot,
+                  tripStatus !== 'active' &&
+                    styles.upcomingDot,
+                ]}
+              />
+
+              <Text style={styles.statusBadgeText}>
+                {statusText}
               </Text>
             </View>
-            <Ionicons name="airplane-outline" size={20} color="#7AA2C5" />
+
+            <View style={styles.airlineBadge}>
+              <Ionicons
+                name="airplane-outline"
+                size={13}
+                color="#FFFFFF"
+              />
+
+              <Text
+                style={styles.airlineText}
+                numberOfLines={1}
+              >
+                {currentFlight?.airline_name ||
+                  'Flight'}
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.flightRoute}>
-            <View>
-              <Text style={styles.airportCode}>{data?.[0]?.departure}</Text>
-              {/* <Text style={styles.cityText}>New York</Text> */}
+          <View style={styles.routeContainer}>
+            <View style={styles.locationBox}>
+              <Text
+                style={styles.cityName}
+                numberOfLines={1}
+              >
+                {departureCity}
+              </Text>
+
+              <Text
+                style={styles.countryName}
+                numberOfLines={1}
+              >
+                {departureCountry}
+              </Text>
+
+              <Text style={styles.timeText}>
+                {currentFlight?.departure_time ||
+                  '--'}
+              </Text>
             </View>
 
-            <View style={styles.flightLineContainer}>
-              <Text style={styles.flightNumber}>{data?.[0]?.airline_name}</Text>
-              <View style={styles.dottedLine}>
-                <View style={styles.dot} />
-                <View style={styles.line} />
+            <View style={styles.routeMiddle}>
+              <View style={styles.planeBadge}>
                 <Ionicons
-                  name="airplane-outline"
+                  name="airplane"
                   size={14}
-                  color="#1E88E5"
-                  style={styles.centerPlane}
+                  color="#FFFFFF"
                 />
-                <View style={styles.line} />
-                <View style={styles.dot} />
               </View>
-              <Text style={styles.duration}>
-                {((d)=>`${d.hours()}h ${d.minutes()}m`)(moment.duration(moment(data?.[0]?.arrival_time,"hh:mm A").diff(moment(data?.[0]?.departure_time,"hh:mm A"))))
-}
-              </Text>
             </View>
 
-            <View style={{ alignItems: 'flex-end' }}>
-              <Text style={styles.airportCode}>{data?.[0]?.destination}</Text>
-              {/* <Text style={styles.cityText}>Istanbul</Text> */}
+            <View
+              style={[
+                styles.locationBox,
+                styles.destinationBox,
+              ]}
+            >
+              <Text
+                style={styles.cityName}
+                numberOfLines={1}
+              >
+                {destinationCity}
+              </Text>
+
+              <Text
+                style={styles.countryName}
+                numberOfLines={1}
+              >
+                {destinationCountry}
+              </Text>
+
+              <Text style={styles.timeText}>
+                {currentFlight?.arrival_time ||
+                  '--'}
+              </Text>
             </View>
           </View>
 
-          <View style={styles.bottomDivider} />
+          <View style={styles.bottomRow}>
+            <View style={styles.bottomItem}>
+              <Ionicons
+                name="calendar-outline"
+                size={14}
+                color="#D9E6EF"
+              />
 
-          <View style={styles.dateContainer}>
-            <Ionicons name="calendar-outline" size={16} color="#7AA2C5" />
-            <Text style={styles.dateText}>
-              {data?.[0]?.travel_date &&
-                moment(data?.[0]?.travel_date)?.calendar()}{' '}
-              {data?.[0]?.departure_time}
-            </Text>
+              <Text style={styles.bottomText}>
+                {currentFlight?.travel_date
+                  ? moment(
+                      currentFlight.travel_date,
+                    ).format('DD MMM YYYY')
+                  : '--'}
+              </Text>
+            </View>
+
+            <View style={styles.bottomItem}>
+              <Ionicons
+                name="checkmark-circle"
+                size={14}
+                color="#5BE0A4"
+              />
+
+              <Text style={styles.bottomText}>
+                Verified
+              </Text>
+            </View>
           </View>
         </View>
-      </ImageBackground>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     backgroundColor: '#0D1520',
     padding: 16,
   },
+
   statusCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -146,21 +669,25 @@ const styles = StyleSheet.create({
     borderColor: '#233242',
     marginBottom: 16,
   },
+
   statusTitle: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
+
   statusSubtitle: {
     color: '#7AA2C5',
     fontSize: 13,
     marginTop: 4,
   },
+
   infoGrid: {
     flexDirection: 'row',
     gap: 12,
     marginBottom: 24,
   },
+
   infoBox: {
     flex: 1,
     backgroundColor: '#16222F',
@@ -170,6 +697,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#233242',
   },
+
   iconCircle: {
     width: 40,
     height: 40,
@@ -179,118 +707,229 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+
   infoValue: {
     color: '#FFFFFF',
     fontSize: 22,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
+
   infoLabel: {
     color: '#7AA2C5',
     fontSize: 12,
     marginTop: 4,
   },
+
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 14,
   },
+
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 17,
+    fontWeight: '700',
   },
+
   viewDetails: {
     color: '#1E88E5',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '600',
   },
+
   flightCard: {
-    height: 200,
-    backgroundColor: '#16222F',
-    borderRadius: 16,
+    height: 225,
+    borderRadius: 18,
     overflow: 'hidden',
+    backgroundColor: '#101B27',
+    borderWidth: 1,
+    borderColor: '#233242',
+    position: 'relative',
   },
-  cardOverlay: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'space-between',
+
+  mapImage: {
+    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
-  cardHeader: {
+
+  mapLoading: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#101B27',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mapFallback: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#101B27',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  mapTint: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(3,10,18,0.18)',
+  },
+
+  topRow: {
+    position: 'absolute',
+    top: 13,
+    left: 13,
+    right: 13,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  upcomingBadge: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(7,17,27,0.86)',
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 6,
+    borderRadius: 20,
   },
-  upcomingText: {
-    color: '#FFFFFF',
-    fontSize: 11,
-    fontWeight: 'bold',
-    letterSpacing: 0.5,
+
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#51D49A',
+    marginRight: 6,
   },
-  flightRoute: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  airportCode: {
-    color: '#FFFFFF',
-    fontSize: 32,
-    fontWeight: 'bold',
-  },
-  cityText: {
-    color: '#7AA2C5',
-    fontSize: 12,
-  },
-  flightLineContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 10,
-  },
-  flightNumber: {
-    color: '#7AA2C5',
-    fontSize: 10,
-    marginBottom: 4,
-  },
-  dottedLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '100%',
-  },
-  dot: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
+
+  upcomingDot: {
     backgroundColor: '#1E88E5',
   },
-  line: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#2D3F50',
-    marginHorizontal: 4,
+
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.7,
   },
-  duration: {
-    color: '#1E88E5',
-    fontSize: 11,
-    marginTop: 4,
+
+  airlineBadge: {
+    maxWidth: '55%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(7,17,27,0.86)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
   },
-  bottomDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    marginVertical: 10,
+
+  airlineText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
   },
-  dateContainer: {
+
+  routeContainer: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    top: 76,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  dateText: {
-    color: '#7AA2C5',
+
+  locationBox: {
+    width: '32%',
+  },
+
+  destinationBox: {
+    alignItems: 'flex-end',
+  },
+
+  cityName: {
+    color: '#1E88E5',
+    fontSize: 18,
+    fontWeight: '800',
+   
+  },
+
+  countryName: {
+    color: '#1E88E5',
+    fontSize: 10,
+    fontWeight: '600',
+    marginTop: 2,
+   
+  },
+
+  timeText: {
+    color: '#1E88E5',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 6,
+    
+  },
+
+  routeMiddle: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  planeBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(30,136,229,0.92)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  bottomRow: {
+    position: 'absolute',
+    left: 14,
+    right: 14,
+    bottom: 13,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+
+  bottomItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: 'rgba(7,17,27,0.82)',
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 10,
+  },
+
+  bottomText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+
+  noFlightCard: {
+    height: 145,
+    backgroundColor: '#16222F',
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: '#233242',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
+  noFlightTitle: {
+    color: '#FFFFFF',
     fontSize: 14,
-    marginLeft: 8,
+    fontWeight: '700',
+    marginTop: 8,
+  },
+
+  noFlightText: {
+    color: '#7AA2C5',
+    fontSize: 11,
+    marginTop: 4,
   },
 });
 
