@@ -1,38 +1,91 @@
-import { ScrollView, StatusBar, StyleSheet, Text, View } from 'react-native';
-import React, { useContext, useEffect, useState } from 'react';
+import {
+  ScrollView,
+  StatusBar,
+  Text,
+} from 'react-native';
+import React, { useEffect, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import DashboardHeader from '../../../components/DashboardHeader';
 import IncRequest from '../../../components/IncRequest';
 import TravelComponent from '../../../components/TravelCompnent';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { BASE_API_URI } from '../../../constant/API';
-import { USER } from '../../../context/User';
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [flights, setFlights] = useState([]);
-  const { userData, setUserData } = useContext(USER);
+
   const getFlights = async () => {
-    let token = await AsyncStorage.getItem('usertoken');
-    axios
-      .get(`${BASE_API_URI}/flight/get?user_id=${userData?._id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(data => {
-        console.log(data.data)
-        setFlights(data.data);
-      });
+    try {
+      const token = await AsyncStorage.getItem('usertoken');
+
+      const response = await axios.get(
+        `${BASE_API_URI}/flight/get`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
+      );
+
+      console.log(
+        '===== HOME FLIGHT API RESPONSE =====',
+        JSON.stringify(response.data, null, 2),
+      );
+
+      // API ka EXACT response:
+      // {
+      //   flights: [...],
+      //   pagination: {...}
+      // }
+
+      setFlights(
+        Array.isArray(response.data?.flights)
+          ? response.data.flights
+          : [],
+      );
+    } catch (error) {
+      console.log(
+        '===== HOME FLIGHT ERROR =====',
+        error?.response?.data ||
+          error?.message ||
+          error,
+      );
+
+      setFlights([]);
+    }
   };
+
   useEffect(() => {
     getFlights();
   }, []);
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0B121C' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: '#0B121C',
+      }}
+    >
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="#0B121C"
+      />
+
       <DashboardHeader />
-      <ScrollView>
-        <TravelComponent data={flights} />
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+      >
+        <TravelComponent
+          data={flights}
+          navigation={navigation}
+        />
+
         <IncRequest />
+
         <Text
           style={{
             fontSize: 16,
@@ -49,5 +102,3 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
-
-const styles = StyleSheet.create({});

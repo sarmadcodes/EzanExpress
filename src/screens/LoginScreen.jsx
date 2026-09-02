@@ -1,134 +1,298 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useContext, useEffect, useState } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useState,
+} from 'react';
+
 import {
   StyleSheet,
   View,
   Text,
   TouchableOpacity,
-  TextInput,
   StatusBar,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+
+import {
+  SafeAreaView,
+} from 'react-native-safe-area-context';
+
 import { LOADING } from '../context/Loading';
 import { USER } from '../context/User';
 import { BASE_API_URI } from '../constant/API';
+
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 
+import Input from '../components/Input/Input';
+
 const LoginScreen = ({ navigation }) => {
   useEffect(() => {
-    console.log('✅ DevTools working — LoginScreen mounted');
-    console.warn('DevTools Test Warning');
+    console.log(
+      '✅ DevTools working — LoginScreen mounted',
+    );
   }, []);
-  const [activeTab, setActiveTab] = useState('email'); // 'email' or 'phone'
-  const [showPassword, setShowPassword] = useState(false);
+
+  const [activeTab, setActiveTab] =
+    useState('email');
+
   const [agreed, setAgreed] = useState(false);
-  const { loading, setLoading } = useContext(LOADING);
-  const { userData, setUserData } = useContext(USER);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    // bankAccount: '',
-  });
+
+  const { loading, setLoading } =
+    useContext(LOADING);
+
+  const {
+    userData,
+    setUserData,
+  } = useContext(USER);
+
+  const [formData, setFormData] =
+    useState({
+      email: '',
+      password: '',
+    });
 
   const BG_COLOR = '#050B18';
 
-  const onLogin = () => {
-    setLoading(true);
-    // setTimeout(() => {
-    //   setLoading(false);
-    //   navigation.navigate('RoleScreen');
-    // }, 4000);
-    const check = Object.values(formData).some(
-      e => typeof e === 'string' && e.trim() === '',
-    );
-
-    if (check) {
-      Toast.show({
-        text1: 'All fileds required!',
-        type: 'error',
-      });
-      setLoading(false);
+  const onLogin = async () => {
+    if (loading) {
       return;
     }
-    console.log(formData, 'formData');
-    console.log(`${BASE_API_URI}/login`, '`${BASE_API_URI}/register`');
-    axios
-      .post(`${BASE_API_URI}/login`, {
-        email: formData?.email,
-        password: formData?.password,
-      })
-      .then(async data => {
-        console.log(data);
-        setLoading(false);
-        await AsyncStorage.setItem('usertoken', data?.data.token);
-        setUserData(data?.data?.user);
-        if (data?.data?.user?.user_type == 'traveler') {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'TravelerDashboard' }],
-          });
-        } else if (data?.data?.user?.user_type == 'sender') {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'SenderDashboard' }],
-          });
-        } else {
-          navigation.reset({
-            index: 0,
-            routes: [{ name: 'RoleScreen' }],
-          });
-        }
-      })
-      .catch(err => {
-        console.log(err);
-        Toast.show({
-          text1: 'Server error try again!',
-          type: 'error',
-        });
-        setLoading(false);
+
+    if (!formData.email.trim()) {
+      Toast.show({
+        text1:
+          activeTab === 'email'
+            ? 'Please enter your email address.'
+            : 'Please enter your phone number.',
+        type: 'error',
       });
+
+      return;
+    }
+
+    if (!formData.password) {
+      Toast.show({
+        text1: 'Please enter your password.',
+        type: 'error',
+      });
+
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const response = await axios.post(
+        `${BASE_API_URI}/login`,
+        {
+          email: formData.email.trim(),
+          password: formData.password,
+        },
+      );
+
+      const token = response?.data?.token;
+      const user = response?.data?.user;
+
+      if (!token || !user) {
+        throw new Error(
+          'Invalid login response.',
+        );
+      }
+
+      await AsyncStorage.setItem(
+        'usertoken',
+        token,
+      );
+
+      setUserData(user);
+
+      /*
+       * ROUTING FLOW
+       *
+       * No role
+       * → RoleScreen
+       *
+       * Sender
+       * → SenderDashboard
+       *
+       * Traveler + onboarding incomplete
+       * → FlightDetails
+       *
+       * Traveler + onboarding complete
+       * → TravelerDashboard
+       */
+
+      if (!user?.user_type) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'RoleScreen',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      if (
+        user.user_type === 'traveler' &&
+        user.is_traveler_verify !== true
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'FlightDetails',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      if (
+        user.user_type === 'traveler' &&
+        user.is_traveler_verify === true
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'TravelerDashboard',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      if (user.user_type === 'sender') {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'SenderDashboard',
+            },
+          ],
+        });
+
+        return;
+      }
+
+      /*
+       * Safety fallback:
+       * unknown/invalid role ho to RoleScreen.
+       */
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'RoleScreen',
+          },
+        ],
+      });
+    } catch (err) {
+      console.log(
+        'LOGIN ERROR STATUS:',
+        err?.response?.status,
+      );
+
+      console.log(
+        'LOGIN ERROR DATA:',
+        err?.response?.data,
+      );
+
+      console.log(
+        'LOGIN ERROR MESSAGE:',
+        err?.message,
+      );
+
+      Toast.show({
+        text1:
+          err?.response?.data?.error ||
+          err?.response?.data?.message ||
+          err?.message ||
+          'Unable to login. Please try again.',
+        type: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={BG_COLOR} />
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor={BG_COLOR}
+      />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={
+          Platform.OS === 'ios'
+            ? 'padding'
+            : 'height'
+        }
         style={styles.container}
       >
-        {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation?.goBack()}>
-            <Ionicons name="arrow-back" size={24} color="#FFF" />
+          <TouchableOpacity
+            onPress={() =>
+              navigation?.goBack()
+            }
+          >
+            <Ionicons
+              name="arrow-back"
+              size={24}
+              color="#FFF"
+            />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Ezan Express</Text>
+
+          <Text style={styles.headerTitle}>
+            Ezan Express
+          </Text>
+
           <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Welcome Text */}
-          <Text style={styles.title}>Login to your account</Text>
-          <Text style={styles.subtitle}>
-            Continue the global delivery network and resume shipping or earning
-            today.
+        <ScrollView
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={
+            styles.scrollContent
+          }
+        >
+          <Text style={styles.title}>
+            Login to your account
           </Text>
 
-          {/* Tabs */}
+          <Text style={styles.subtitle}>
+            Continue the global delivery network
+            and resume shipping or earning today.
+          </Text>
+
           <View style={styles.tabContainer}>
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'email' && styles.activeTab]}
-              onPress={() => setActiveTab('email')}
+              style={[
+                styles.tab,
+                activeTab === 'email' &&
+                  styles.activeTab,
+              ]}
+              onPress={() =>
+                setActiveTab('email')
+              }
             >
               <Text
                 style={[
                   styles.tabText,
-                  activeTab === 'email' && styles.activeTabText,
+                  activeTab === 'email' &&
+                    styles.activeTabText,
                 ]}
               >
                 Email
@@ -136,13 +300,20 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.tab, activeTab === 'phone' && styles.activeTab]}
-              onPress={() => setActiveTab('phone')}
+              style={[
+                styles.tab,
+                activeTab === 'phone' &&
+                  styles.activeTab,
+              ]}
+              onPress={() =>
+                setActiveTab('phone')
+              }
             >
               <Text
                 style={[
                   styles.tabText,
-                  activeTab === 'phone' && styles.activeTabText,
+                  activeTab === 'phone' &&
+                    styles.activeTabText,
                 ]}
               >
                 Phone Number
@@ -150,98 +321,167 @@ const LoginScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Dynamic Input Field */}
           <View style={styles.inputSection}>
-            <Text style={styles.inputLabel}>
-              {activeTab === 'email' ? 'Email Address' : 'Phone Number'}
-            </Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                value={formData?.email}
-                placeholder={
-                  activeTab === 'email'
-                    ? 'Enter your email address'
-                    : 'Enter phone number'
-                }
-                placeholderTextColor="#5E6A81"
-                keyboardType={
-                  activeTab === 'email' ? 'email-address' : 'phone-pad'
-                }
-                autoCapitalize="none"
-                onChangeText={e => setFormData({ ...formData, email: e })}
-              />
-              <Ionicons
-                name={activeTab === 'email' ? 'mail-outline' : 'call-outline'}
-                size={20}
-                color="#5E6A81"
-              />
-            </View>
+            <Input
+              type={
+                activeTab === 'email'
+                  ? 'email'
+                  : 'text'
+              }
+              label={
+                activeTab === 'email'
+                  ? 'Email Address'
+                  : 'Phone Number'
+              }
+              placeholder={
+                activeTab === 'email'
+                  ? 'Enter your email address'
+                  : 'Enter phone number'
+              }
+              icon={
+                activeTab === 'email'
+                  ? 'mail-outline'
+                  : 'call-outline'
+              }
+              value={formData.email}
+              onChangeText={value =>
+                setFormData(previous => ({
+                  ...previous,
+                  email: value,
+                }))
+              }
+            />
 
-            {/* Password */}
-            <Text style={styles.inputLabel}>Password</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                value={formData?.password}
-                placeholder="Enter password"
-                placeholderTextColor="#5E6A81"
-                secureTextEntry={!showPassword}
-                onChangeText={e => setFormData({ ...formData, password: e })}
-              />
-              <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                <Ionicons
-                  name={showPassword ? 'eye-outline' : 'eye-off-outline'}
-                  size={20}
-                  color="#5E6A81"
-                />
-              </TouchableOpacity>
-            </View>
+            <Input
+              type="password"
+              label="Password"
+              placeholder="Enter password"
+              value={formData.password}
+              onChangeText={value =>
+                setFormData(previous => ({
+                  ...previous,
+                  password: value,
+                }))
+              }
+            />
 
-            {/* Confirm Password */}
-            {/* <Text style={styles.inputLabel}>Confirm Password</Text>
-            <View style={styles.inputWrapper}>
-              <TextInput
-                style={styles.input}
-                placeholder="Confirm your password"
-                placeholderTextColor="#5E6A81"
-                secureTextEntry={!showPassword}
-              />
-              <Ionicons name="eye-off-outline" size={20} color="#5E6A81" />
-            </View> */}
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                navigation.navigate(
+                  'ForgotPasswordScreen',
+                )
+              }
+              style={
+                styles.forgotPasswordButton
+              }
+            >
+              <Text
+                style={
+                  styles.forgotPasswordText
+                }
+              >
+                Forgot Password?
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          {/* Agreement Checkbox */}
-          <TouchableOpacity
+          <View
             style={styles.checkboxContainer}
-            onPress={() => setAgreed(!agreed)}
           >
-            <View style={[styles.checkbox, agreed && styles.checkboxActive]}>
-              {agreed && <Ionicons name="checkmark" size={14} color="#FFF" />}
-            </View>
-            <Text style={styles.checkboxText}>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() =>
+                setAgreed(
+                  previous => !previous,
+                )
+              }
+              hitSlop={{
+                top: 8,
+                bottom: 8,
+                left: 8,
+                right: 8,
+              }}
+              accessibilityRole="checkbox"
+              accessibilityState={{
+                checked: agreed,
+              }}
+              style={
+                styles.checkboxTouchArea
+              }
+            >
+              <View
+                style={[
+                  styles.checkbox,
+                  agreed &&
+                    styles.checkboxActive,
+                ]}
+              >
+                {agreed ? (
+                  <Ionicons
+                    name="checkmark"
+                    size={14}
+                    color="#FFF"
+                  />
+                ) : null}
+              </View>
+            </TouchableOpacity>
+
+            <Text
+              style={styles.checkboxText}
+            >
               I agree to the{' '}
-              <Text style={styles.linkText}>Terms of Service</Text> and{' '}
-              <Text style={styles.linkText}>Privacy Policy</Text>.
+              <Text
+                style={styles.linkText}
+              >
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.linkText}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Text>
+          </View>
+
+          <TouchableOpacity
+            onPress={onLogin}
+            disabled={loading}
+            style={[
+              styles.button,
+              loading &&
+                styles.buttonDisabled,
+            ]}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.buttonText}>
+              {loading
+                ? 'Please wait...'
+                : 'Continue'}
             </Text>
           </TouchableOpacity>
 
-          {/* Continue Button */}
-          <TouchableOpacity
-            onPress={() => onLogin()}
-            style={styles.button}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.buttonText}>Continue</Text>
-          </TouchableOpacity>
-
-          {/* Login Footer */}
           <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('RegistrationScreen')}
+            <Text
+              style={styles.footerText}
             >
-              <Text style={styles.linkText}>Create now</Text>
+              Don't have an account?{' '}
+            </Text>
+
+            <TouchableOpacity
+              onPress={() =>
+                navigation.navigate(
+                  'RegistrationScreen',
+                )
+              }
+            >
+              <Text
+                style={styles.linkText}
+              >
+                Create now
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
@@ -251,8 +491,15 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: '#050B18' },
-  container: { flex: 1 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#050B18',
+  },
+
+  container: {
+    flex: 1,
+  },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -260,62 +507,98 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  headerTitle: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  scrollContent: { paddingHorizontal: 25, paddingTop: 10 },
-  title: { fontSize: 32, fontWeight: 'bold', color: '#FFF', marginBottom: 10 },
+
+  headerTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+
+  scrollContent: {
+    paddingHorizontal: 25,
+    paddingTop: 10,
+  },
+
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#FFF',
+    marginBottom: 10,
+  },
+
   subtitle: {
     fontSize: 16,
     color: '#8E9AAF',
     lineHeight: 22,
     marginBottom: 30,
   },
+
   tabContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#1A2233',
     marginBottom: 25,
   },
-  tab: { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  activeTab: { borderBottomWidth: 2, borderBottomColor: '#1E90FF' },
-  tabText: { color: '#5E6A81', fontSize: 16, fontWeight: '600' },
-  activeTabText: { color: '#1E90FF' },
-  inputSection: { marginBottom: 20 },
-  inputLabel: {
-    color: '#FFF',
-    fontSize: 14,
-    marginBottom: 8,
-    fontWeight: '500',
-  },
-  inputWrapper: {
-    flexDirection: 'row',
+
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
     alignItems: 'center',
-    backgroundColor: '#0F172A',
-    borderWidth: 1,
-    borderColor: '#1E293B',
-    borderRadius: 12,
-    paddingHorizontal: 15,
-    height: 55,
+  },
+
+  activeTab: {
+    borderBottomWidth: 2,
+    borderBottomColor: '#1E90FF',
+  },
+
+  tabText: {
+    color: '#5E6A81',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  activeTabText: {
+    color: '#1E90FF',
+  },
+
+  inputSection: {
     marginBottom: 20,
   },
-  input: { flex: 1, color: '#FFF', fontSize: 15 },
+
   checkboxContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 30,
   },
+
+  checkboxTouchArea: {
+    marginRight: 10,
+  },
+
   checkbox: {
     width: 20,
     height: 20,
     borderRadius: 4,
     borderWidth: 1,
     borderColor: '#1E90FF',
-    marginRight: 10,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  checkboxActive: { backgroundColor: '#1E90FF' },
-  checkboxText: { color: '#8E9AAF', fontSize: 13, flex: 1 },
-  linkText: { color: '#1E90FF' },
+
+  checkboxActive: {
+    backgroundColor: '#1E90FF',
+  },
+
+  checkboxText: {
+    color: '#8E9AAF',
+    fontSize: 13,
+    flex: 1,
+  },
+
+  linkText: {
+    color: '#1E90FF',
+  },
+
   button: {
     backgroundColor: '#1E90FF',
     height: 55,
@@ -325,9 +608,39 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     elevation: 4,
   },
-  buttonText: { color: '#FFF', fontSize: 18, fontWeight: 'bold' },
-  footer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 40 },
-  footerText: { color: '#8E9AAF', fontSize: 15 },
+
+  buttonDisabled: {
+    opacity: 0.55,
+  },
+
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginTop: -8,
+    marginBottom: 12,
+  },
+
+  forgotPasswordText: {
+    color: '#55A9FF',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
+  buttonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+
+  footer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 40,
+  },
+
+  footerText: {
+    color: '#8E9AAF',
+    fontSize: 15,
+  },
 });
 
 export default LoginScreen;
