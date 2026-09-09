@@ -36,6 +36,7 @@ import PaymentSuccess from './src/screens/PaymentSuccess';
 import PaymentScreen from './src/screens/PaymentScreen';
 import DeliveryConfirmation from './src/screens/DeliveryConfirmation';
 import RatePassengerScreen from './src/screens/RatePassengerScreen';
+import AccountPendingScreen from './src/screens/AccountPendingScreen';
 import PaymentSlip from './src/screens/PaymentSlip';
 import { LOADING } from './src/context/Loading';
 import { USER } from './src/context/User';
@@ -93,6 +94,11 @@ const App = () => {
                 component={TravelerDashboard}
               />
               <Stack.Screen name="Notifications" component={Notifications} />
+
+              <Stack.Screen
+                name="AccountPending"
+                component={AccountPendingScreen}
+              />
 
               <Stack.Screen
                 name="RatePassenger"

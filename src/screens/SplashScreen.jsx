@@ -83,6 +83,26 @@ const Splashscreen = () => {
 
       setUserData(user);
 
+      if (
+        user.user_type !== 'admin' &&
+        user.is_account_approved !== true
+      ) {
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'AccountPending',
+              params: {
+                rejection_reason:
+                  user.account_rejection_reason,
+              },
+            },
+          ],
+        });
+
+        return;
+      }
+
       if (!user?.user_type) {
         navigation.reset({
           index: 0,
