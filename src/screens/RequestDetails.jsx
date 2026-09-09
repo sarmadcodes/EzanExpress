@@ -30,11 +30,6 @@ const RequestDetails = ({navigation, route}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  /*
-  |--------------------------------------------------------------------------
-  | Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const formatDate = value => {
     if (!value) {
@@ -189,11 +184,6 @@ const RequestDetails = ({navigation, route}) => {
     };
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Load Current Request
-  |--------------------------------------------------------------------------
-  */
 
   const loadRequest = useCallback(
     async (isRefresh = false) => {
@@ -275,11 +265,6 @@ const RequestDetails = ({navigation, route}) => {
     [request?._id],
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Traveler Profile
-  |--------------------------------------------------------------------------
-  */
 
   const loadTraveler = useCallback(
     async () => {
@@ -344,11 +329,6 @@ const RequestDetails = ({navigation, route}) => {
     return unsubscribe;
   }, [navigation, loadRequest]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Timeline
-  |--------------------------------------------------------------------------
-  */
 
   const getTimeline = () => {
     const status = String(
@@ -443,11 +423,6 @@ const RequestDetails = ({navigation, route}) => {
     ];
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Payment
-  |--------------------------------------------------------------------------
-  */
 
  const handlePayment = () => {
   navigation.navigate('PaymentScreen', {
@@ -455,11 +430,6 @@ const RequestDetails = ({navigation, route}) => {
   });
 };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Rating
-  |--------------------------------------------------------------------------
-  */
 
   const canRate = () => {
     if (
@@ -488,16 +458,8 @@ const RequestDetails = ({navigation, route}) => {
   };
 
   const handleRateTraveler = () => {
-    /*
-     * Rating screen route yahan.
-     */
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Values
-  |--------------------------------------------------------------------------
-  */
 
   const state = getStatus();
 
@@ -515,11 +477,6 @@ const RequestDetails = ({navigation, route}) => {
     status === 'approved' &&
     paymentStatus !== 'paid';
 
-  /*
-  |--------------------------------------------------------------------------
-  | Loading
-  |--------------------------------------------------------------------------
-  */
 
   if (
     loading &&
@@ -553,11 +510,6 @@ const RequestDetails = ({navigation, route}) => {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <SafeAreaView
@@ -587,7 +539,6 @@ const RequestDetails = ({navigation, route}) => {
         contentContainerStyle={
           styles.scrollContent
         }>
-        {/* Status */}
 
         <View
           style={[
@@ -652,7 +603,6 @@ const RequestDetails = ({navigation, route}) => {
           </View>
         ) : null}
 
-        {/* Request Number */}
 
         <View style={styles.requestHeader}>
           <View>
@@ -682,7 +632,6 @@ const RequestDetails = ({navigation, route}) => {
           </Text>
         </View>
 
-        {/* Traveler */}
 
         <Text
           style={styles.sectionTitle}>
@@ -780,7 +729,6 @@ const RequestDetails = ({navigation, route}) => {
           </TouchableOpacity>
         </View>
 
-        {/* Parcel Details */}
 
         <Text
           style={styles.sectionTitle}>
@@ -912,7 +860,6 @@ const RequestDetails = ({navigation, route}) => {
           ) : null}
         </View>
 
-        {/* Receiver */}
 
         <Text
           style={styles.sectionTitle}>
@@ -980,7 +927,6 @@ const RequestDetails = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Pricing */}
 
         <Text
           style={styles.sectionTitle}>
@@ -1047,7 +993,6 @@ const RequestDetails = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Message */}
 
         {request?.message ? (
           <>
@@ -1074,7 +1019,6 @@ const RequestDetails = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* Rejection */}
 
         {status === 'rejected' ? (
           <>
@@ -1116,7 +1060,6 @@ const RequestDetails = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* Parcel Code */}
 
         {paymentStatus === 'paid' &&
         request?.parcel_code ? (
@@ -1176,7 +1119,6 @@ const RequestDetails = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* Timeline */}
 
         <Text
           style={styles.sectionTitle}>
@@ -1277,7 +1219,6 @@ const RequestDetails = ({navigation, route}) => {
           )}
         </View>
 
-        {/* Payment */}
 
         {paymentRequired ? (
           <View
@@ -1292,7 +1233,6 @@ const RequestDetails = ({navigation, route}) => {
           </View>
         ) : null}
 
-        {/* Rating */}
 
         {canRate() ? (
           <TouchableOpacity

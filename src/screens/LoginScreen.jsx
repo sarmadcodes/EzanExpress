@@ -111,21 +111,6 @@ const LoginScreen = ({ navigation }) => {
 
       setUserData(user);
 
-      /*
-       * ROUTING FLOW
-       *
-       * No role
-       * → RoleScreen
-       *
-       * Sender
-       * → SenderDashboard
-       *
-       * Traveler + onboarding incomplete
-       * → FlightDetails
-       *
-       * Traveler + onboarding complete
-       * → TravelerDashboard
-       */
 
       if (!user?.user_type) {
         navigation.reset({
@@ -185,10 +170,6 @@ const LoginScreen = ({ navigation }) => {
         return;
       }
 
-      /*
-       * Safety fallback:
-       * unknown/invalid role ho to RoleScreen.
-       */
       navigation.reset({
         index: 0,
         routes: [

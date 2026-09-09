@@ -14,13 +14,11 @@ const RequestRejected = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Status</Text>
       </View>
 
       <View style={styles.content}>
-        {/* Decline Icon with Dotted Border */}
         <View style={styles.iconContainer}>
           <View style={styles.dottedCircle}>
             <View style={styles.innerCircle}>
@@ -29,21 +27,13 @@ const RequestRejected = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Text Information */}
         <Text style={styles.mainTitle}>Request Declined</Text>
         <Text style={styles.subTitle}>
           This shipment has been removed from your list. We will find another carrier for this package.
         </Text>
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.footer}>
-        {/* <TouchableOpacity 
-          style={styles.primaryBtn}
-          onPress={() => navigation?.navigate('ExploreRequests')} // Navigates back to finding carriers
-        >
-          <Text style={styles.primaryBtnText}>View Other Requests</Text>
-        </TouchableOpacity> */}
 
         <TouchableOpacity 
           style={styles.secondaryBtn}
@@ -59,7 +49,7 @@ const RequestRejected = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0B121C', // Matching dark theme
+    backgroundColor: '#0B121C',
   },
   header: {
     height: 60,
@@ -116,7 +106,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   primaryBtn: {
-    backgroundColor: '#1E90FF', // Standard blue action color
+    backgroundColor: '#1E90FF',
     height: 56,
     borderRadius: 12,
     justifyContent: 'center',

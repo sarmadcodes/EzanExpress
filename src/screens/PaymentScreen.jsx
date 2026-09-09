@@ -52,11 +52,6 @@ const PaymentScreen = ({navigation, route}) => {
     return `${value} g`;
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Get Latest Request
-  |--------------------------------------------------------------------------
-  */
 
   const getUpdatedRequest = async token => {
     try {
@@ -102,16 +97,6 @@ const PaymentScreen = ({navigation, route}) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Check Payment Status
-  |--------------------------------------------------------------------------
-  |
-  | Stripe webhook is source of truth.
-  |
-  | Frontend does NOT mark request as paid.
-  |
-  */
 
   const checkPaymentStatus = async () => {
     try {
@@ -149,17 +134,6 @@ const PaymentScreen = ({navigation, route}) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Browser -> App Return
-  |--------------------------------------------------------------------------
-  |
-  | Stripe Checkout opens in browser.
-  |
-  | When user returns to the app,
-  | request is refreshed from backend.
-  |
-  */
 
   useEffect(() => {
     let previousState =
@@ -188,22 +162,12 @@ const PaymentScreen = ({navigation, route}) => {
     };
   }, [request?._id]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Start Stripe Hosted Checkout
-  |--------------------------------------------------------------------------
-  */
 
   const handlePayment = async () => {
     if (loading) {
       return;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Request Validation
-    |--------------------------------------------------------------------------
-    */
 
     if (!request?._id) {
       Alert.alert(
@@ -214,11 +178,6 @@ const PaymentScreen = ({navigation, route}) => {
       return;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Traveler Approval Required
-    |--------------------------------------------------------------------------
-    */
 
     if (
       String(
@@ -233,11 +192,6 @@ const PaymentScreen = ({navigation, route}) => {
       return;
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Already Paid
-    |--------------------------------------------------------------------------
-    */
 
     if (
       String(
@@ -255,11 +209,6 @@ const PaymentScreen = ({navigation, route}) => {
     try {
       setLoading(true);
 
-      /*
-      |--------------------------------------------------------------------------
-      | Auth Token
-      |--------------------------------------------------------------------------
-      */
 
       const token =
         await AsyncStorage.getItem(
@@ -275,11 +224,6 @@ const PaymentScreen = ({navigation, route}) => {
         return;
       }
 
-      /*
-      |--------------------------------------------------------------------------
-      | Create Checkout Session
-      |--------------------------------------------------------------------------
-      */
 
       const response = await axios.post(
         `${BASE_API_URI}/request/checkout-session`,
@@ -347,26 +291,9 @@ await Linking.openURL(
   checkoutUrl,
 );
 
-      /*
-      |--------------------------------------------------------------------------
-      | Open Stripe Hosted Checkout
-      |--------------------------------------------------------------------------
-      */
 
-    //   const supported =
-    //     await Linking.canOpenURL(
-    //       checkoutUrl,
-    //     );
 
-    //   if (!supported) {
-    //     throw new Error(
-    //       'Unable to open Stripe Checkout.',
-    //     );
-    //   }
 
-    //   await Linking.openURL(
-    //     checkoutUrl,
-        //   );
         console.log(
   'STRIPE CHECKOUT URL:',
   checkoutUrl,

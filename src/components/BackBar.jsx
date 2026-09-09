@@ -21,7 +21,6 @@ const BackBar = ({ title, showBackButton = true }) => {
           paddingVertical: 10,
         }}
       >
-        {/* Back Button */}
         {showBackButton ? (
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <View>
@@ -33,11 +32,9 @@ const BackBar = ({ title, showBackButton = true }) => {
             </View>
           </TouchableOpacity>
         ) : (
-          // Keeps header spacing/layout stable
           <View style={{ width: 30, height: 30 }} />
         )}
 
-        {/* Center Title */}
         <View
           style={{
             position: 'absolute',

@@ -44,20 +44,13 @@ const RegistrationScreen = ({ navigation }) => {
 
   const [phoneData, setPhoneData] = useState(null);
 
-  // OLD
-  // const [image, setImage] = useState('');
 
-  // NEW
   const [identityDocument, setIdentityDocument] = useState(null);
 
   const [registeredUser, setRegisteredUser] = useState(null);
 
-  // Temporary token returned by POST /register.
-  // Only registration OTP endpoints may use this token.
   const [registrationToken, setRegistrationToken] = useState('');
 
-  // Normal auth JWT returned only after successful OTP verification.
-  // Identity upload and authenticated app APIs use this token.
   const [authToken, setAuthToken] = useState('');
 
   const [otpVisible, setOtpVisible] = useState(false);
@@ -67,7 +60,6 @@ const RegistrationScreen = ({ navigation }) => {
   const [verifyingOtp, setVerifyingOtp] = useState(false);
   const [resendingOtp, setResendingOtp] = useState(false);
 
-  // NEW: post-OTP identity upload state
   const [emailVerified, setEmailVerified] = useState(false);
   const [uploadingIdentity, setUploadingIdentity] = useState(false);
   const [identityUploaded, setIdentityUploaded] = useState(false);
@@ -247,10 +239,7 @@ const RegistrationScreen = ({ navigation }) => {
           return;
         }
 
-        // OLD
-        // setImage(asset?.uri.replace('file://', ''));
 
-        // NEW
         setIdentityDocument({
           uri: asset.uri,
           type: asset.type || 'image/jpeg',
@@ -285,42 +274,13 @@ const RegistrationScreen = ({ navigation }) => {
     return response?.data;
   };
 
-//   const uploadIdentityDocument = async token => {
-//   const multipartData = new FormData();
 
-//   const filePayload = {
-//     uri: identityDocument.uri,
-//     type: identityDocument.type,
-//     name: identityDocument.fileName,
-//   };
 
-//   console.log('IDENTITY FILE PAYLOAD:', filePayload);
 
-//   multipartData.append('identity_document', filePayload);
 
-//   try {
-//     const response = await axios.post(
-//       `${BASE_API_URI}/upload/identity-document`,
-//       multipartData,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//           'Content-Type': 'multipart/form-data',
-//         },
-//       },
-//     );
 
-//     console.log('IDENTITY UPLOAD SUCCESS:', response?.data);
 
-//     return response?.data;
-//   } catch (error) {
-//     console.log('IDENTITY UPLOAD STATUS:', error?.response?.status);
-//     console.log('IDENTITY UPLOAD DATA:', error?.response?.data);
-//     console.log('IDENTITY UPLOAD MESSAGE:', error?.message);
 
-//     throw error;
-//   }
-// };
 
   const sendEmailOtp = async token => {
     const response = await axios.post(
@@ -336,8 +296,6 @@ const RegistrationScreen = ({ navigation }) => {
     return response?.data;
   };
 
-  // NEW FLOW:
-  // Register -> Send Email OTP -> Verify Email OTP -> Upload Identity -> Choose Role
   const openEmailVerification = async token => {
     try {
       const otpResponse = await sendEmailOtp(token);
@@ -362,8 +320,6 @@ const RegistrationScreen = ({ navigation }) => {
 
       showError(getBackendError(error));
 
-      // Pending registration still exists. Do not call /register again
-      // while the registrationToken remains valid.
       return false;
     }
   };
@@ -403,8 +359,6 @@ const RegistrationScreen = ({ navigation }) => {
 
       const message = getBackendError(error);
 
-      // Email is already verified here.
-      // Keep user in retry state; do not repeat OTP or registration.
       setIdentityUploadError(message);
       showError(message);
 
@@ -427,14 +381,11 @@ const RegistrationScreen = ({ navigation }) => {
     setLoading(true);
 
     try {
-      // OTP already succeeded and account exists: retry only identity upload.
       if (authToken && emailVerified) {
         await handleIdentityUpload(authToken, registeredUser);
         return;
       }
 
-      // Pending registration already exists: do not create it again.
-      // Continue the OTP flow with the temporary registration token.
       if (registrationToken) {
         await openEmailVerification(registrationToken);
         return;
@@ -466,12 +417,8 @@ const RegistrationScreen = ({ navigation }) => {
         throw new Error('Invalid registration response.');
       }
 
-      // IMPORTANT: /register does not create USERS and does not return
-      // a normal auth JWT. Keep this token only for registration OTP APIs.
       setRegistrationToken(tempRegistrationToken);
 
-      // Send OTP using registrationToken. Identity upload must wait until
-      // verify-email-otp creates the real user and returns a normal JWT.
       await openEmailVerification(tempRegistrationToken);
     } catch (error) {
       console.log(
@@ -506,7 +453,6 @@ const RegistrationScreen = ({ navigation }) => {
           'Verification code sent successfully.',
       );
 
-      // Backend invalidates old registration OTPs when the new one is sent.
       setOtp('');
       startResendCooldown();
     } catch (error) {
@@ -571,9 +517,6 @@ const RegistrationScreen = ({ navigation }) => {
         throw new Error('Invalid verification response.');
       }
 
-      // TOKEN SWITCH:
-      // registrationToken is finished here. From this point onward use only
-      // the normal JWT returned by successful OTP verification.
       setAuthToken(normalAuthToken);
       setRegistrationToken('');
       setRegisteredUser(updatedUser);
@@ -588,8 +531,6 @@ const RegistrationScreen = ({ navigation }) => {
           'Email verified and account created successfully.',
       );
 
-      // Account now exists and is verified. Automatically upload the
-      // selected identity document using the NORMAL auth JWT.
       await handleIdentityUpload(normalAuthToken, updatedUser);
     } catch (error) {
       console.log(
@@ -597,7 +538,6 @@ const RegistrationScreen = ({ navigation }) => {
         error?.response?.data || error,
       );
 
-      // Wrong/expired OTP => no account created and no identity upload.
       showError(getBackendError(error));
     } finally {
       setVerifyingOtp(false);

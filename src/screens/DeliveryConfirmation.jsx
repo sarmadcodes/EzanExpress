@@ -1,169 +1,247 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import React, { useState, useRef } from 'react';
+import React, {useState} from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  StatusBar,
-  TextInput,
-  Image,
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 
-const DeliveryConfirmation = ({ navigation }) => {
-  const [otp, setOtp] = useState(['', '', '', '']);
-  const inputs = useRef([]);
+import BackBar from '../components/BackBar';
+import api from '../services/api';
 
-  const handleOtpChange = (value, index) => {
-    const newOtp = [...otp];
-    newOtp[index] = value.replace(/[^0-9]/g, '');
-    setOtp(newOtp);
+const formatWeight = grams => {
+  const value = Number(grams);
+  if (!Number.isFinite(value) || value <= 0) return '—';
+  return value >= 1000 ? `${(value / 1000).toFixed(2)} kg` : `${value} g`;
+};
 
-    if (value && index < 3) {
-      inputs.current[index + 1]?.focus();
+const Row = ({label, value}) => (
+  <View style={styles.row}>
+    <Text style={styles.rowLabel}>{label}</Text>
+    <Text style={styles.rowValue}>{value || '—'}</Text>
+  </View>
+);
+
+const DeliveryConfirmation = ({navigation, route}) => {
+  const [travelCode, setTravelCode] = useState(
+    route?.params?.travel_code || '',
+  );
+  const [parcelCode, setParcelCode] = useState(
+    route?.params?.parcel_code || '',
+  );
+
+  const [parcel, setParcel] = useState(null);
+  const [looking, setLooking] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [error, setError] = useState('');
+
+  const codesReady =
+    travelCode.trim().length > 0 && parcelCode.trim().length > 0;
+
+  const handleLookup = async () => {
+    if (!codesReady) {
+      setError('Enter both the Travel Code and the Parcel Code.');
+      return;
+    }
+
+    setLooking(true);
+    setError('');
+
+    try {
+      const {data} = await api.post('/request/delivery/lookup', {
+        travel_code: travelCode.trim(),
+        parcel_code: parcelCode.trim(),
+      });
+
+      const found = data?.parcel || null;
+
+      if (!found) {
+        setError('No parcel found for these codes.');
+        return;
+      }
+
+      setParcel(found);
+    } catch (err) {
+      setError(err?.message || 'Unable to find this parcel.');
+    } finally {
+      setLooking(false);
     }
   };
 
-  const handleKeyPress = (e, index) => {
-    if (e.nativeEvent.key === 'Backspace' && otp[index] === '' && index > 0) {
-      inputs.current[index - 1]?.focus();
+  const submitDelivery = async () => {
+    setConfirming(true);
+    setError('');
+
+    try {
+      await api.patch('/request/delivery/complete', {
+        travel_code: travelCode.trim(),
+        parcel_code: parcelCode.trim(),
+      });
+
+      Alert.alert(
+        'Delivery Confirmed',
+        'The parcel has been marked as delivered. Your earnings will be released to your wallet.',
+        [
+          {
+            text: 'Done',
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
+    } catch (err) {
+      setError(err?.message || 'Unable to confirm delivery.');
+    } finally {
+      setConfirming(false);
     }
   };
 
   const handleConfirm = () => {
-    const code = otp.join('');
-    if (code.length < 4) {
-      Alert.alert(
-        'Invalid Code',
-        'Please enter the 4-digit security code provided by the Sender.'
-      );
-      return;
-    }
-
     Alert.alert(
-      'Payment Successful',
-      'The handover has been confirmed and funds have been released.',
+      'Confirm Delivery',
+      'Only confirm once the parcel is physically handed to the receiver. This cannot be undone.',
       [
-        {
-          text: 'OK',
-          onPress: () => navigation.replace('TravelerDashboard'),
-        },
-      ]
+        {text: 'Cancel', style: 'cancel'},
+        {text: 'Confirm', style: 'destructive', onPress: submitDelivery},
+      ],
     );
   };
 
+  const reset = () => {
+    setParcel(null);
+    setError('');
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
+    <SafeAreaView style={styles.screen}>
+      <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
+
+      <BackBar title="Confirm Delivery" />
 
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}
-      >
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView
-          contentContainerStyle={{ paddingBottom: 30 }}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Header */}
-          <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()}>
-              <Ionicons name="arrow-back" size={24} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>Handover</Text>
-            <Ionicons name="help-circle-outline" size={24} color="#fff" />
-          </View>
-
-          <View style={styles.content}>
-            <Text style={styles.mainTitle}>Confirm delivery</Text>
-            <Text style={styles.subTitle}>
-              You are meeting <Text style={styles.highlightText}>Sarah J.</Text> Ask
-              for the 4-digit parcel code to complete the job.
-            </Text>
-
-            {/* Parcel Card */}
-            <View style={styles.parcelCard}>
-              <View>
-                <View style={styles.tagContainer}>
-                  <Text style={styles.parcelTag}>PARCEL</Text>
-                  <Text style={styles.verifiedText}>Verified</Text>
-                </View>
-                <Text style={styles.parcelId}>#EZ-9928</Text>
-                <Text style={styles.receiverLabel}>
-                  Receiver: <Text style={styles.receiverName}>Sarah Jenkins</Text>
-                </Text>
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled">
+          {!parcel ? (
+            <>
+              <View style={styles.iconCircle}>
+                <Ionicons name="qr-code-outline" size={30} color="#1363C8" />
               </View>
 
-              <Image
-                source={require('../assets/globe.jpg')}
-                style={styles.parcelImage}
-              />
-            </View>
+              <Text style={styles.heading}>Enter delivery codes</Text>
 
-            {/* OTP Section */}
-            <View style={styles.otpSection}>
-              <View style={styles.securityHeader}>
-                <Ionicons name="lock-closed" size={16} color="#94a3b8" />
-                <Text style={styles.securityTitle}>Enter Security Code</Text>
-              </View>
-
-              <View style={styles.otpContainer}>
-                {otp.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    ref={(el) => (inputs.current[index] = el)}
-                    style={[
-                      styles.otpInput,
-                      digit && styles.otpInputActive,
-                    ]}
-                    maxLength={1}
-                    keyboardType="number-pad"
-                    value={digit}
-                    onChangeText={(value) =>
-                      handleOtpChange(value, index)
-                    }
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                    placeholder="-"
-                    placeholderTextColor="#475569"
-                  />
-                ))}
-              </View>
-            </View>
-
-            <View style={styles.releaseNotice}>
-              <Ionicons name="cash-outline" size={16} color="#10b981" />
-              <Text style={styles.releaseText}>
-                Payment released upon confirmation
+              <Text style={styles.subheading}>
+                Enter your Travel Code and the Parcel Code shown by the sender
+                to look up the parcel.
               </Text>
-            </View>
 
-            {/* Footer Buttons */}
-            <View style={styles.footer}>
+              <Text style={styles.label}>Travel Code</Text>
+              <TextInput
+                value={travelCode}
+                onChangeText={setTravelCode}
+                placeholder="e.g. TRV-XXXXXXXX"
+                placeholderTextColor="#ffffff45"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={styles.input}
+              />
+
+              <Text style={styles.label}>Parcel Code</Text>
+              <TextInput
+                value={parcelCode}
+                onChangeText={setParcelCode}
+                placeholder="e.g. PCL-XXXXXXXX"
+                placeholderTextColor="#ffffff45"
+                autoCapitalize="characters"
+                autoCorrect={false}
+                style={styles.input}
+              />
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
               <TouchableOpacity
-                style={styles.confirmBtn}
-                onPress={handleConfirm}
-              >
-                <Text style={styles.confirmBtnText}>
-                  Confirm & Release Payment
-                </Text>
-                <View style={styles.checkIconBox}>
-                  <Ionicons name="checkmark" size={16} color="#1E90FF" />
-                </View>
+                onPress={handleLookup}
+                disabled={!codesReady || looking}
+                style={[
+                  styles.primaryBtn,
+                  (!codesReady || looking) && styles.btnDisabled,
+                ]}>
+                {looking ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.primaryBtnText}>Find Parcel</Text>
+                )}
               </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <View
+                style={[
+                  styles.iconCircle,
+                  parcel.delivered && styles.iconCircleDone,
+                ]}>
+                <Ionicons
+                  name={parcel.delivered ? 'checkmark-done' : 'cube-outline'}
+                  size={30}
+                  color={parcel.delivered ? '#22C55E' : '#1363C8'}
+                />
+              </View>
 
-              <TouchableOpacity style={styles.issueBtn}>
-                <Text style={styles.issueText}>
-                  Receiver not here? Report an issue
-                </Text>
+              <Text style={styles.heading}>
+                {parcel.delivered ? 'Already delivered' : 'Parcel found'}
+              </Text>
+
+              <View style={styles.card}>
+                <Row label="Parcel Code" value={parcel.parcel_code} />
+                <Row label="Type" value={parcel.item_type} />
+                <Row
+                  label="Weight"
+                  value={formatWeight(parcel.weight_in_grams)}
+                />
+                <Row label="Receiver" value={parcel?.receiver?.name} />
+                <Row label="Phone" value={parcel?.receiver?.phone_number} />
+                <Row label="Address" value={parcel?.receiver?.address} />
+              </View>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              {parcel.delivered ? (
+                <View style={styles.doneBox}>
+                  <Ionicons name="information-circle" size={18} color="#22C55E" />
+                  <Text style={styles.doneText}>
+                    This parcel was already marked as delivered.
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  onPress={handleConfirm}
+                  disabled={confirming}
+                  style={[styles.primaryBtn, confirming && styles.btnDisabled]}>
+                  {confirming ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.primaryBtnText}>
+                      Confirm Handover
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity onPress={reset} style={styles.secondaryBtn}>
+                <Text style={styles.secondaryBtnText}>Use different codes</Text>
               </TouchableOpacity>
-            </View>
-          </View>
+            </>
+          )}
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -173,121 +251,99 @@ const DeliveryConfirmation = ({ navigation }) => {
 export default DeliveryConfirmation;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a101d' },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-  },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-
-  content: { paddingHorizontal: 20 },
-
-  mainTitle: {
-    color: '#fff',
-    fontSize: 32,
-    fontWeight: 'bold',
-    marginBottom: 12,
-  },
-  subTitle: {
-    color: '#94a3b8',
-    fontSize: 16,
-    lineHeight: 24,
-    marginBottom: 32,
-  },
-  highlightText: { color: '#1E90FF', fontWeight: 'bold' },
-
-  parcelCard: {
-    backgroundColor: '#161f31',
-    borderRadius: 16,
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: '#1e293b',
-    marginBottom: 32,
-  },
-  tagContainer: { flexDirection: 'row', marginBottom: 6 },
-  parcelTag: {
-    backgroundColor: 'rgba(59,130,246,0.2)',
-    color: '#3b82f6',
-    fontSize: 10,
-    fontWeight: 'bold',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  verifiedText: { color: '#94a3b8', fontSize: 12 },
-  parcelId: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
-  receiverLabel: { color: '#94a3b8', marginTop: 6 },
-  receiverName: { color: '#fff' },
-  parcelImage: { width: 90, height: 90, borderRadius: 12 },
-
-  otpSection: { alignItems: 'center', marginBottom: 24 },
-  securityHeader: { flexDirection: 'row', marginBottom: 16 },
-  securityTitle: { color: '#94a3b8', marginLeft: 8 },
-
-  otpContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  otpInput: {
-    width: 70,
-    height: 80,
-    backgroundColor: '#161f31',
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#1e293b',
-    color: '#fff',
-    fontSize: 28,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  otpInputActive: {
-    borderColor: '#3b82f6',
-    backgroundColor: '#1e293b',
-  },
-
-  releaseNotice: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  screen: {flex: 1, backgroundColor: '#0B121C'},
+  flex: {flex: 1},
+  content: {padding: 18, paddingBottom: 40},
+  iconCircle: {
     alignSelf: 'center',
-    backgroundColor: 'rgba(16,185,129,0.1)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 20,
-  },
-  releaseText: { color: '#10b981', marginLeft: 8 },
-
-  footer: { marginTop: 20, marginBottom: 20 },
-
-  confirmBtn: {
-    backgroundColor: '#1E90FF',
-    height: 60,
-    borderRadius: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#1363C81A',
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
   },
-  confirmBtnText: {
+  iconCircleDone: {backgroundColor: '#22C55E1A'},
+  heading: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginRight: 12,
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 14,
   },
-  checkIconBox: {
-    width: 24,
-    height: 24,
+  subheading: {
+    color: '#ffffffa0',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 8,
+    marginBottom: 22,
+    lineHeight: 19,
+  },
+  label: {color: '#ffffffc0', fontSize: 13, marginBottom: 6, marginTop: 12},
+  input: {
+    backgroundColor: '#121A26',
+    borderWidth: 1,
+    borderColor: '#1E293B',
     borderRadius: 12,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: Platform.OS === 'ios' ? 14 : 10,
+    color: '#fff',
+    fontSize: 15,
+    letterSpacing: 1,
   },
-  issueBtn: { marginTop: 16, alignSelf: 'center' },
-  issueText: { color: '#94a3b8' },
+  card: {
+    backgroundColor: '#121A26',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    marginTop: 20,
+  },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    gap: 14,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: '#1E293B',
+  },
+  rowLabel: {color: '#ffffff90', fontSize: 13},
+  rowValue: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+    flex: 1,
+    textAlign: 'right',
+  },
+  error: {
+    color: '#EF4444',
+    fontSize: 13,
+    marginTop: 14,
+    textAlign: 'center',
+  },
+  primaryBtn: {
+    backgroundColor: '#1363C8',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 22,
+  },
+  btnDisabled: {opacity: 0.55},
+  primaryBtnText: {color: '#fff', fontSize: 15, fontWeight: '700'},
+  secondaryBtn: {paddingVertical: 14, alignItems: 'center'},
+  secondaryBtnText: {color: '#1363C8', fontSize: 14, fontWeight: '600'},
+  doneBox: {
+    flexDirection: 'row',
+    gap: 8,
+    alignItems: 'center',
+    backgroundColor: '#22C55E12',
+    borderWidth: 1,
+    borderColor: '#22C55E33',
+    borderRadius: 12,
+    padding: 14,
+    marginTop: 20,
+  },
+  doneText: {color: '#22C55E', fontSize: 13, flex: 1},
 });

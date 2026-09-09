@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../components/BackBar';
 
 const ParcelStatus = ({ navigation }) => {
-  // Mock data matching the design
   const data = {
     requestId: '#1024',
     expiry: { hours: '01', mins: '59', secs: '30' },
@@ -55,7 +54,6 @@ const ParcelStatus = ({ navigation }) => {
     
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* Success Header */}
         <View style={styles.successSection}>
           <View style={styles.checkCircle}>
             <Ionicons name="checkmark" size={30} color="#fff" />
@@ -64,7 +62,6 @@ const ParcelStatus = ({ navigation }) => {
           <Text style={styles.statusSub}>Great news, a carrier has accepted your offer.</Text>
         </View>
 
-        {/* Payment Expiry Card */}
         <View style={styles.expiryCard}>
           <View style={styles.expiryHeader}>
             <View style={styles.expiryLeft}>
@@ -83,7 +80,6 @@ const ParcelStatus = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Carrier Info Card */}
         <View style={styles.carrierCard}>
           <View style={styles.carrierMain}>
             <View style={styles.avatarWrapper}>
@@ -121,7 +117,6 @@ const ParcelStatus = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Request Summary Table */}
         <View style={styles.summaryCard}>
           <Text style={styles.summaryHeading}>Request Summary</Text>
           
@@ -144,7 +139,6 @@ const ParcelStatus = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Step Indicator */}
         <View style={styles.stepIndicator}>
             <View style={[styles.stepDot, styles.stepDone]}><Ionicons name="checkmark" size={10} color="#fff" /></View>
             <View style={styles.stepLineActive} />
@@ -157,7 +151,6 @@ const ParcelStatus = ({ navigation }) => {
 
       </ScrollView>
 
-      {/* Footer Buttons */}
       <View style={styles.footer}>
         <TouchableOpacity 
             style={styles.primaryBtn}
@@ -167,13 +160,6 @@ const ParcelStatus = ({ navigation }) => {
           <Text style={styles.primaryBtnText}>Proceed to Payment</Text>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity 
-            style={styles.secondaryBtn}
-            onPress={() => navigation?.navigate('Chat', { name: 'Sarah' })}
-        >
-          <Ionicons name="chatbubble-outline" size={20} color="#fff" style={{ marginRight: 10 }} />
-          <Text style={styles.secondaryBtnText}>Chat with Sarah</Text>
-        </TouchableOpacity> */}
       </View>
     </SafeAreaView>
   );

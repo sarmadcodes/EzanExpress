@@ -27,11 +27,6 @@ const PassengerSearch = ({navigation, route}) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  /*
-  |--------------------------------------------------------------------------
-  | Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const getAirportCode = airport => {
     return airport?.iata || airport?.code || airport?.icao || '';
@@ -82,11 +77,6 @@ const PassengerSearch = ({navigation, route}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Sent Requests
-  |--------------------------------------------------------------------------
-  */
 
   const getSentRequests = async token => {
     try {
@@ -124,11 +114,6 @@ const PassengerSearch = ({navigation, route}) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Search Flights
-  |--------------------------------------------------------------------------
-  */
 
   const getFlights = async () => {
     if (!selectedFrom || !selectedTo) {
@@ -217,11 +202,6 @@ const PassengerSearch = ({navigation, route}) => {
     getFlights();
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Refresh Request Status When Coming Back
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     const unsubscribe =
@@ -249,11 +229,6 @@ const PassengerSearch = ({navigation, route}) => {
     return unsubscribe;
   }, [navigation]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Open Traveler Profile
-  |--------------------------------------------------------------------------
-  */
 
   const openTravelerProfile = item => {
     const existingRequest =
@@ -274,11 +249,6 @@ const PassengerSearch = ({navigation, route}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Send Request
-  |--------------------------------------------------------------------------
-  */
 
   const sendRequest = item => {
     navigation.navigate(
@@ -290,11 +260,6 @@ const PassengerSearch = ({navigation, route}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Request Status UI
-  |--------------------------------------------------------------------------
-  */
 
   const getRequestStatusData = request => {
     const status = String(
@@ -336,11 +301,6 @@ const PassengerSearch = ({navigation, route}) => {
     };
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Traveler Card
-  |--------------------------------------------------------------------------
-  */
 
   const renderTravelerCard = item => {
     const availableSpace = Math.max(
@@ -377,7 +337,6 @@ const PassengerSearch = ({navigation, route}) => {
           openTravelerProfile(item)
         }
       >
-        {/* Traveler */}
 
         <View style={styles.cardHeader}>
           <View
@@ -432,7 +391,6 @@ const PassengerSearch = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Route */}
 
         <View style={styles.routeRow}>
           <View style={styles.routeSide}>
@@ -521,7 +479,6 @@ const PassengerSearch = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Flight Information */}
 
         <View style={styles.flightInfo}>
           <View
@@ -571,7 +528,6 @@ const PassengerSearch = ({navigation, route}) => {
           ) : null}
         </View>
 
-        {/* Space */}
 
         <View style={styles.infoBox}>
           <View>
@@ -615,7 +571,6 @@ const PassengerSearch = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Request Status / Action */}
 
         {existingRequest ? (
           <View
@@ -690,11 +645,6 @@ const PassengerSearch = ({navigation, route}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <SafeAreaView
@@ -715,7 +665,6 @@ const PassengerSearch = ({navigation, route}) => {
           styles.scrollPadding
         }
       >
-        {/* Selected Route */}
 
         <View
           style={styles.searchSummary}

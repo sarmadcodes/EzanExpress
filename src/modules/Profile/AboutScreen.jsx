@@ -22,7 +22,6 @@ const AboutScreen = ({ navigation }) => {
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         
-        {/* App Logo & Version Section */}
         <View style={styles.logoSection}>
           <View style={styles.logoContainer}>
             <Image 
@@ -39,7 +38,6 @@ const AboutScreen = ({ navigation }) => {
           <Text style={styles.versionText}>Version 1.2.0 (Build 452)</Text>
         </View>
 
-        {/* Our Purpose Section */}
         <Text style={styles.sectionHeading}>Our Purpose</Text>
         <View style={styles.purposeCard}>
           <View style={styles.purposeItem}>
@@ -67,7 +65,6 @@ const AboutScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Core Values Section */}
         <Text style={styles.sectionHeading}>Core Values</Text>
         <View style={styles.valuesGrid}>
           <View style={styles.valueCard}>
@@ -87,29 +84,7 @@ const AboutScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Legal & Support Section */}
-        {/* <Text style={styles.sectionHeading}>Legal & Support</Text>
-        <View style={styles.legalList}>
-          {['Terms of Service', 'Privacy Policy', 'Community Guidelines', 'Open Source Licenses'].map((item, index) => (
-            <TouchableOpacity key={index} style={styles.legalItem}>
-              <View style={styles.legalLeft}>
-                <Ionicons 
-                  name={
-                    index === 0 ? "document-text-outline" : 
-                    index === 1 ? "lock-closed-outline" : 
-                    index === 2 ? "people-outline" : "code-slash-outline"
-                  } 
-                  size={20} 
-                  color="#94a3b8" 
-                />
-                <Text style={styles.legalText}>{item}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color="#475569" />
-            </TouchableOpacity>
-          ))}
-        </View> */}
 
-        {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.socialRow}>
             <Text style={styles.socialLink}>TWITTER</Text>
@@ -145,7 +120,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
-    // Soft glow effect
     shadowColor: '#3b82f6',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,

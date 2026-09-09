@@ -6,7 +6,6 @@ import {
   Text,
   TouchableOpacity,
   StatusBar,
-  Image,
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 const { width } = Dimensions.get('window');
 
 const ConfirmationScreen = ({ navigation }) => {
-  // Mock data based on the previous flow
   const requestData = {
     id: '#839201',
     item: 'Small Electronics Box',
@@ -25,8 +23,7 @@ const ConfirmationScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor='#0B121C' />
-      
-      {/* Header */}
+
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Confirmation</Text>
         <TouchableOpacity style={styles.closeBtn} onPress={() => navigation?.navigate('SenderDashboard')}>
@@ -35,44 +32,38 @@ const ConfirmationScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.content}>
-        {/* Success Icon */}
         <View style={styles.successCircle}>
           <View style={styles.iconBg}>
             <Ionicons name="checkmark-sharp" size={50} color="#fff" />
           </View>
         </View>
 
-        {/* Success Message */}
         <Text style={styles.mainTitle}>Request Sent Successfully!</Text>
         <Text style={styles.subTitle}>
           Your parcel request is live! We've broadcast it to verified travelers heading to <Text style={{fontWeight: 'bold', color: '#fff'}}>{requestData.destination}</Text>.
         </Text>
 
-        {/* Parcel Summary Card */}
         <View style={styles.summaryCard}>
           <View style={styles.cardInfo}>
             <View style={styles.statusBadge}>
               <Ionicons name="hourglass-outline" size={12} color="#f97316" />
               <Text style={styles.statusText}>Pending Match</Text>
             </View>
-            
+
             <Text style={styles.requestId}>ID {requestData.id}</Text>
             <Text style={styles.itemTitle}>{requestData.item}</Text>
-            
+
             <View style={styles.routeRow}>
               <Ionicons name="airplane" size={16} color="#94a3b8" />
               <Text style={styles.routeText}>{requestData.route}</Text>
             </View>
           </View>
 
-          {/* Map Image Placeholder */}
-          <Image 
-            source={{ uri: 'https://api.mapbox.com/styles/v1/mapbox/dark-v10/static/-74.006,40.7128,12/100x100?access_token=YOUR_TOKEN' }} 
-            style={styles.mapThumbnail}
-          />
+          <View style={[styles.mapThumbnail, styles.routeThumb]}>
+            <Ionicons name="map-outline" size={26} color="#3b82f6" />
+          </View>
         </View>
 
-        {/* Info Box */}
         <View style={styles.infoBox}>
           <View style={styles.infoIconBg}>
             <Ionicons name="time" size={20} color="#3b82f6" />
@@ -86,18 +77,10 @@ const ConfirmationScreen = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.footer}>
-        {/* <TouchableOpacity 
-          style={styles.primaryBtn} 
-          activeOpacity={0.8}
-          onPress={() => navigation?.navigate('MyParcels')}
-        >
-          <Text style={styles.primaryBtnText}>View My Parcels</Text>
-        </TouchableOpacity> */}
 
-        <TouchableOpacity 
-          style={styles.secondaryBtn} 
+        <TouchableOpacity
+          style={styles.secondaryBtn}
           activeOpacity={0.7}
           onPress={() => navigation?.navigate('SenderDashboard')}
         >
@@ -109,6 +92,13 @@ const ConfirmationScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  routeThumb: {
+    backgroundColor: '#13203045',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0B121C',
@@ -151,7 +141,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#1E90FF',
     justifyContent: 'center',
     alignItems: 'center',
-    // Glow effect
     shadowColor: '#1E90FF',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,

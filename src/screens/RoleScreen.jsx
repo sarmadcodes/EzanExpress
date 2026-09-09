@@ -140,12 +140,6 @@ const RoleCard = ({
               {buttonText}
             </Text>
 
-            {/* <Ionicons
-              name="arrow-forward"
-              size={compact ? 17 : 18}
-              color="#FFFFFF"
-              style={styles.buttonArrow}
-            /> */}
           </TouchableOpacity>
         </Animated.View>
       </View>

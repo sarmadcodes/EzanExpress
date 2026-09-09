@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../../components/BackBar';
 
-// Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -79,7 +78,6 @@ const HelpCenter = ({ navigation }) => {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.mainGreeting}>Hello! How can Ezan Express assist you today?</Text>
 
-        {/* Search Bar */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#64748b" style={{ marginRight: 10 }} />
           <TextInput 
@@ -89,7 +87,6 @@ const HelpCenter = ({ navigation }) => {
           />
         </View>
 
-        {/* Quick Actions */}
         <Text style={styles.sectionHeading}>QUICK ACTIONS</Text>
         <View style={styles.actionRow}>
           <QuickAction icon="location" label="Track Order" />
@@ -98,7 +95,6 @@ const HelpCenter = ({ navigation }) => {
           <QuickAction icon="shield-checkmark" label="Safety" />
         </View>
 
-        {/* Categories Tab Bar */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabContainer}>
           {['General', 'Sending', 'Traveling', 'Trust & Safety'].map((tab) => (
             <TouchableOpacity 
@@ -111,7 +107,6 @@ const HelpCenter = ({ navigation }) => {
           ))}
         </ScrollView>
 
-        {/* Popular Articles */}
         <Text style={styles.sectionHeading}>Popular Articles</Text>
         {articles.map((item) => (
           <TouchableOpacity 
@@ -137,11 +132,7 @@ const HelpCenter = ({ navigation }) => {
           </TouchableOpacity>
         ))}
 
-        {/* <TouchableOpacity style={styles.viewAllBtn}>
-          <Text style={styles.viewAllText}>View all topics</Text>
-        </TouchableOpacity> */}
 
-        {/* Support Card */}
         <View style={styles.supportCard}>
           <Text style={styles.supportTitle}>Still need help?</Text>
           <Text style={styles.supportSub}>Our support team is available 24/7 to assist you with any issues.</Text>
@@ -163,7 +154,6 @@ const HelpCenter = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Guide/Safety Cards */}
         <Text style={styles.sectionHeading}>New to Ezan?</Text>
         <View style={styles.footerCardsRow}>
             <TouchableOpacity style={[styles.guideCard, { backgroundColor: '#1e3a8a' }]}>

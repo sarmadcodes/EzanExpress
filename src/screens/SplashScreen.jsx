@@ -83,9 +83,6 @@ const Splashscreen = () => {
 
       setUserData(user);
 
-      /*
-       * No role selected yet
-       */
       if (!user?.user_type) {
         navigation.reset({
           index: 0,
@@ -99,10 +96,6 @@ const Splashscreen = () => {
         return;
       }
 
-      /*
-       * Traveler but onboarding
-       * is NOT complete
-       */
       if (
         user.user_type === 'traveler' &&
         user.is_traveler_verify !== true
@@ -119,9 +112,6 @@ const Splashscreen = () => {
         return;
       }
 
-      /*
-       * Traveler onboarding complete
-       */
       if (
         user.user_type === 'traveler' &&
         user.is_traveler_verify === true
@@ -139,9 +129,6 @@ const Splashscreen = () => {
         return;
       }
 
-      /*
-       * Sender
-       */
       if (
         user.user_type === 'sender'
       ) {
@@ -158,9 +145,6 @@ const Splashscreen = () => {
         return;
       }
 
-      /*
-       * Safety fallback
-       */
       navigation.reset({
         index: 0,
         routes: [

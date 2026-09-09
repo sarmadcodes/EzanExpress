@@ -11,7 +11,6 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 
-// Mock Data for Recent Earnings
 const EARNINGS_DATA = [
   {
     id: '1',
@@ -94,7 +93,6 @@ const WalletComp = () => {
     <SafeAreaView style={styles.container}>
 
 
-      {/* Balance Card */}
       <View style={styles.balanceCard}>
         <View style={styles.balanceHeader}>
           <Text style={styles.balanceLabel}>Total Balance</Text>
@@ -125,7 +123,6 @@ const WalletComp = () => {
         )}
       </View>
 
-      {/* Action Buttons */}
       <View style={styles.buttonRow}>
         <TouchableOpacity
           style={styles.withdrawButton}
@@ -154,7 +151,6 @@ const WalletComp = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Recent Earnings List */}
       <View style={styles.listHeader}>
         <Text style={styles.sectionTitle}>Recent Earnings</Text>
         <TouchableOpacity onPress={() => navigation.navigate('AllTransactions')}>
@@ -166,13 +162,6 @@ const WalletComp = () => {
                    <Text style={{fontSize:14, color:'#2563EB', fontWeight:'600'}}>No Earning</Text>
                   </View>
 
-      {/* <FlatList
-        data={EARNINGS_DATA}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      /> */}
     </SafeAreaView>
   );
 };

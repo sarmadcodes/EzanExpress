@@ -54,11 +54,6 @@ const NewParcelRequest = ({navigation, route}) => {
 
   const [errors, setErrors] = useState({});
 
-  /*
-  |--------------------------------------------------------------------------
-  | Flight
-  |--------------------------------------------------------------------------
-  */
 
   const flightId = flight?._id;
 
@@ -90,11 +85,6 @@ const NewParcelRequest = ({navigation, route}) => {
     .trim()
     .toLowerCase();
 
-  /*
-  |--------------------------------------------------------------------------
-  | Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const showError = text => {
     Toast.show({
@@ -146,11 +136,6 @@ const NewParcelRequest = ({navigation, route}) => {
     return allowedItems === type;
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Weight
-  |--------------------------------------------------------------------------
-  */
 
   const weightInGrams = useMemo(() => {
     const value = Number(weight);
@@ -159,22 +144,15 @@ const NewParcelRequest = ({navigation, route}) => {
       return 0;
     }
 
-    // Document input = grams
     if (itemType === 'document') {
       return Math.round(value);
     }
 
-    // Parcel input = kg
     return Math.round(value * 1000);
   }, [weight, itemType]);
 
   const requestedWeightKg = weightInGrams / 1000;
 
-  /*
-  |--------------------------------------------------------------------------
-  | Item Type
-  |--------------------------------------------------------------------------
-  */
 
   const selectItemType = type => {
     if (!isTypeAllowed(type)) {
@@ -205,11 +183,6 @@ const NewParcelRequest = ({navigation, route}) => {
     }
   }, [allowedItems]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Categories
-  |--------------------------------------------------------------------------
-  */
 
   const toggleParcelType = type => {
     setQuote(null);
@@ -232,11 +205,6 @@ const NewParcelRequest = ({navigation, route}) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Validation
-  |--------------------------------------------------------------------------
-  */
 
   const validateQuoteData = () => {
     const nextErrors = {};
@@ -312,11 +280,6 @@ const NewParcelRequest = ({navigation, route}) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Payload
-  |--------------------------------------------------------------------------
-  */
 
   const getBasePayload = () => {
     return {
@@ -340,11 +303,6 @@ const NewParcelRequest = ({navigation, route}) => {
     };
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Quote
-  |--------------------------------------------------------------------------
-  */
 
   const getQuote = async () => {
     if (!validateQuoteData()) {
@@ -391,11 +349,6 @@ const NewParcelRequest = ({navigation, route}) => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Reset quote when quote-affecting data changes
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     setQuote(null);
@@ -406,20 +359,12 @@ const NewParcelRequest = ({navigation, route}) => {
     otherParcelType,
   ]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Send Request
-  |--------------------------------------------------------------------------
-  */
 
   const handleSendRequest = async () => {
   if (!validateRequest()) {
     return;
   }
 
-  /*
-   * Quote must correspond to the current item/weight.
-   */
   if (!quote) {
     showError('Please calculate the price first.');
     return;
@@ -461,9 +406,6 @@ const NewParcelRequest = ({navigation, route}) => {
       response?.data,
     );
 
-    /*
-     * Backend response se created request nikalo.
-     */
     const createdRequest =
       response?.data?.request ||
       response?.data?.data?.request ||
@@ -476,10 +418,6 @@ const NewParcelRequest = ({navigation, route}) => {
         'Request sent successfully.',
     );
 
-    /*
-     * Back jane ke bajaye separate
-     * RequestSuccess screen open hogi.
-     */
     navigation.replace('RequestSuccess', {
       request: createdRequest,
       flight,
@@ -498,11 +436,6 @@ const NewParcelRequest = ({navigation, route}) => {
   }
 };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Quote values
-  |--------------------------------------------------------------------------
-  */
 
   const quoteAmount =
     quote?.amount ??
@@ -521,11 +454,6 @@ const NewParcelRequest = ({navigation, route}) => {
     quote?.currency || 'usd',
   ).toUpperCase();
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <SafeAreaView style={styles.container}>
@@ -543,7 +471,6 @@ const NewParcelRequest = ({navigation, route}) => {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Selected Traveler */}
 
         <View style={styles.tripCard}>
           <View style={styles.travelerRow}>
@@ -654,7 +581,6 @@ const NewParcelRequest = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Item Details */}
 
         <Text style={styles.sectionTitle}>
           What are you sending?
@@ -750,7 +676,6 @@ const NewParcelRequest = ({navigation, route}) => {
           </Text>
         ) : null}
 
-        {/* Parcel Categories */}
 
         {itemType === 'parcel' ? (
           <>
@@ -826,7 +751,6 @@ const NewParcelRequest = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* Weight */}
 
         <Input
           label={
@@ -866,7 +790,6 @@ const NewParcelRequest = ({navigation, route}) => {
           </Text>
         </View>
 
-        {/* Quote */}
 
         <View style={styles.quoteSection}>
           {!quote ? (
@@ -958,7 +881,6 @@ const NewParcelRequest = ({navigation, route}) => {
           )}
         </View>
 
-        {/* Receiver */}
 
         <Text style={styles.sectionTitle}>
           Receiver Details
@@ -999,7 +921,6 @@ const NewParcelRequest = ({navigation, route}) => {
           error={errors.receiverPhone}
         />
 
-        {/* Message */}
 
         <Text style={styles.sectionTitle}>
           Message
@@ -1036,7 +957,6 @@ const NewParcelRequest = ({navigation, route}) => {
           </Text>
         </View>
 
-        {/* Main Button */}
 
         <View style={styles.buttonContainer}>
           <Button
@@ -1070,11 +990,6 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Trip
-  |--------------------------------------------------------------------------
-  */
 
   tripCard: {
     backgroundColor: '#101B2A',
@@ -1205,11 +1120,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Sections
-  |--------------------------------------------------------------------------
-  */
 
   sectionTitle: {
     color: '#4DA4FA',
@@ -1236,11 +1146,6 @@ const styles = StyleSheet.create({
     marginBottom: 11,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Item Type
-  |--------------------------------------------------------------------------
-  */
 
   typeRow: {
     flexDirection: 'row',
@@ -1297,11 +1202,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Categories
-  |--------------------------------------------------------------------------
-  */
 
   chipContainer: {
     flexDirection: 'row',
@@ -1345,11 +1245,6 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Weight
-  |--------------------------------------------------------------------------
-  */
 
   weightHint: {
     flexDirection: 'row',
@@ -1366,11 +1261,6 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Quote
-  |--------------------------------------------------------------------------
-  */
 
   quoteSection: {
     marginBottom: 27,
@@ -1477,11 +1367,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Message
-  |--------------------------------------------------------------------------
-  */
 
   messageNote: {
     flexDirection: 'row',

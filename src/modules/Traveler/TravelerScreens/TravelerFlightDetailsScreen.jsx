@@ -22,9 +22,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import {BASE_API_URI} from '../../../constant/API';
 
-/* =========================================================
-   HELPERS
-========================================================= */
 
 const formatDate = value => {
   if (!value) return '—';
@@ -229,9 +226,6 @@ const getRoute = flight => {
   };
 };
 
-/* =========================================================
-   SMALL COMPONENTS
-========================================================= */
 
 const InfoItem = ({ icon, label, value }) => {
   return (
@@ -260,9 +254,6 @@ const InfoItem = ({ icon, label, value }) => {
   );
 };
 
-/* =========================================================
-   SCREEN
-========================================================= */
 
 const TravelerFlightDetailsScreen = ({
   navigation,
@@ -377,9 +368,6 @@ const getParcelState = request => {
   };
 };
 
-  /* =======================================================
-     HISTORY
-  ======================================================= */
 
   const history = useMemo(() => {
     if (!Array.isArray(flight?.history)) {
@@ -399,9 +387,6 @@ const getParcelState = request => {
     });
   }, [flight]);
 
-  /* =======================================================
-     MISSING FLIGHT
-  ======================================================= */
 
   if (!flight) {
     return (
@@ -472,12 +457,6 @@ const getParcelState = request => {
   const hasTravelCode =
     isApproved && Boolean(flight?.travel_code);
 
-  /* =======================================================
-     RESUBMIT
-
-     Actual resubmit form/API will be handled separately.
-     For now this keeps the current navigation contract.
-  ======================================================= */
 
   const handleResubmit = () => {
     navigation.navigate('FlightDetails', {
@@ -487,9 +466,6 @@ const getParcelState = request => {
     });
   };
 
-  /* =======================================================
-     UI
-  ======================================================= */
 
   return (
     <SafeAreaView
@@ -501,9 +477,6 @@ const getParcelState = request => {
         backgroundColor="#0B121C"
       />
 
-      {/* ===================================================
-          HEADER
-      =================================================== */}
 
       <View style={styles.header}>
         <TouchableOpacity
@@ -529,9 +502,6 @@ const getParcelState = request => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* =================================================
-            STATUS
-        ================================================= */}
 
         <View
           style={[
@@ -607,9 +577,6 @@ const getParcelState = request => {
           </View>
         </View>
 
-        {/* =================================================
-            ROUTE HERO
-        ================================================= */}
 
         <View style={styles.routeCard}>
           <View style={styles.routeCardTop}>
@@ -640,7 +607,6 @@ const getParcelState = request => {
           </View>
 
           <View style={styles.routeMain}>
-            {/* FROM */}
 
             <View style={styles.routeLocation}>
               <Text style={styles.routeCode}>
@@ -661,7 +627,6 @@ const getParcelState = request => {
               ) : null}
             </View>
 
-            {/* ROUTE LINE */}
 
             <View style={styles.routeCenter}>
               <View style={styles.routeLine} />
@@ -677,7 +642,6 @@ const getParcelState = request => {
               <View style={styles.routeLine} />
             </View>
 
-            {/* TO */}
 
             <View
               style={[
@@ -713,9 +677,6 @@ const getParcelState = request => {
           </View>
         </View>
 
-        {/* =================================================
-            TRIP INFORMATION
-        ================================================= */}
 
         <View style={styles.sectionCard}>
           <View style={styles.sectionHeader}>
@@ -810,9 +771,6 @@ const getParcelState = request => {
           </View>
         </View>
 
-        {/* =================================================
-            TRAVEL CODE
-        ================================================= */}
 
         {hasTravelCode ? (
           <View style={styles.travelCodeCard}>
@@ -871,9 +829,6 @@ const getParcelState = request => {
           </View>
         ) : null}
 
-        {/* =================================================
-    ACCEPTED PARCELS
-================================================= */}
 
 {isApproved ? (
   <View style={styles.parcelsCard}>
@@ -1058,9 +1013,6 @@ const getParcelState = request => {
   </View>
         ) : null}
         
-        {/* =================================================
-            PENDING
-        ================================================= */}
 
         {isPending ? (
           <View style={styles.pendingCard}>
@@ -1085,9 +1037,6 @@ const getParcelState = request => {
           </View>
         ) : null}
 
-        {/* =================================================
-            REJECTED
-        ================================================= */}
 
         {isRejected ? (
           <View style={styles.rejectedCard}>
@@ -1156,9 +1105,6 @@ const getParcelState = request => {
           </View>
         ) : null}
 
-        {/* =================================================
-            CANCELLED
-        ================================================= */}
 
         {isCancelled ? (
           <View style={styles.cancelledCard}>
@@ -1185,9 +1131,6 @@ const getParcelState = request => {
           </View>
         ) : null}
 
-        {/* =================================================
-            TIMELINE — ALWAYS LAST
-        ================================================= */}
 
         <View style={styles.timelineCard}>
           <View style={styles.timelineHeader}>
@@ -1269,9 +1212,6 @@ const getParcelState = request => {
                         styles.timelineRow
                       }
                     >
-                      {/* =====================
-                          CONTINUOUS RAIL
-                      ===================== */}
 
                       <View
                         style={
@@ -1311,9 +1251,6 @@ const getParcelState = request => {
                         ) : null}
                       </View>
 
-                      {/* =====================
-                          EVENT
-                      ===================== */}
 
                       <View
                         style={[
@@ -1436,9 +1373,6 @@ const getParcelState = request => {
 
 export default TravelerFlightDetailsScreen;
 
-/* =========================================================
-   STYLES
-========================================================= */
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -1446,7 +1380,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B121C',
   },
 
-  /* HEADER */
 
   header: {
     height: 62,
@@ -1494,7 +1427,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
 
-  /* STATUS */
 
   statusBanner: {
     padding: 13,
@@ -1562,7 +1494,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
-  /* ROUTE */
 
   routeCard: {
     marginTop: 13,
@@ -1701,7 +1632,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* SECTION CARD */
 
   sectionCard: {
     marginTop: 13,
@@ -1788,7 +1718,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  /* TRAVEL CODE */
 
   travelCodeCard: {
     marginTop: 13,
@@ -1900,7 +1829,6 @@ const styles = StyleSheet.create({
     marginTop: 9,
   },
 
-  /* NOTICES */
 
   pendingCard: {
     marginTop: 13,
@@ -1954,7 +1882,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  /* REJECTED */
 
   rejectedCard: {
     marginTop: 13,
@@ -2068,7 +1995,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 
-  /* CANCELLED */
 
   cancelledCard: {
     marginTop: 13,
@@ -2103,9 +2029,6 @@ const styles = StyleSheet.create({
     marginTop: 3,
   },
 
-  /* =====================================================
-     PREMIUM TIMELINE
-  ===================================================== */
 
   timelineCard: {
     marginTop: 13,
@@ -2150,7 +2073,6 @@ const styles = StyleSheet.create({
     alignItems: 'stretch',
   },
 
-  /* RAIL */
 
   timelineRail: {
     width: 20,
@@ -2191,7 +2113,6 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
 
-  /* EVENT CONTENT */
 
   timelineContent: {
     flex: 1,
@@ -2250,7 +2171,6 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 
-  /* TIMELINE REASON */
 
   timelineReason: {
     alignSelf: 'flex-start',
@@ -2288,7 +2208,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  /* TIMELINE TRAVEL CODE */
 
   timelineCode: {
     alignSelf: 'flex-start',
@@ -2316,7 +2235,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
 
-  /* EMPTY TIMELINE */
 
   timelineEmpty: {
     marginTop: 15,
@@ -2340,7 +2258,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
 
-  /* MISSING */
 
   missingContainer: {
     flex: 1,

@@ -49,13 +49,6 @@ const RequestSuccess = ({navigation, route}) => {
   };
 
   const viewRequests = () => {
-    /*
-     * MyRequests screen next banegi.
-     * Filhal home par le ja raha hai.
-     *
-     * Baad mein:
-     * navigation.replace('MyRequests');
-     */
     navigation.popToTop();
   };
 
@@ -69,7 +62,6 @@ const RequestSuccess = ({navigation, route}) => {
       <View style={styles.container}>
         <View style={styles.content}>
 
-          {/* SUCCESS ICON */}
 
           <View style={styles.successGlow}>
             <View style={styles.successCircle}>
@@ -90,7 +82,6 @@ const RequestSuccess = ({navigation, route}) => {
             You’ll be notified when they respond.
           </Text>
 
-          {/* STATUS */}
 
           <View style={styles.statusBadge}>
             <View style={styles.statusDot} />
@@ -100,11 +91,9 @@ const RequestSuccess = ({navigation, route}) => {
             </Text>
           </View>
 
-          {/* REQUEST CARD */}
 
           <View style={styles.card}>
 
-            {/* TRAVELER */}
 
             <View style={styles.travelerRow}>
               <View style={styles.avatar}>
@@ -137,7 +126,6 @@ const RequestSuccess = ({navigation, route}) => {
 
             <View style={styles.divider} />
 
-            {/* ROUTE */}
 
             <View style={styles.routeRow}>
               <View style={styles.routeSide}>
@@ -188,7 +176,6 @@ const RequestSuccess = ({navigation, route}) => {
 
             <View style={styles.divider} />
 
-            {/* ITEM INFO */}
 
             <View style={styles.detailsRow}>
               <View style={styles.detailItem}>
@@ -237,7 +224,6 @@ const RequestSuccess = ({navigation, route}) => {
             </View>
           </View>
 
-          {/* NEXT STEP */}
 
           <View style={styles.nextCard}>
             <View style={styles.nextIcon}>
@@ -261,7 +247,6 @@ const RequestSuccess = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* BOTTOM ACTIONS */}
 
         <View style={styles.bottom}>
           <Button

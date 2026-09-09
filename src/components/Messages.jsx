@@ -17,7 +17,6 @@ const Messages = () => {
       name: 'Sarah Khan',
       message: 'Project update: all tasks completed successfully!',
       time: '10:09',
-      // count: 1,
       image: require('../assets/logo1.jpg'),
     },
     {
@@ -25,7 +24,6 @@ const Messages = () => {
       name: 'Michael Lee',
       message: 'Let’s meet tomorrow at the office to finalize the proposal.',
       time: '09:41',
-      // count: 2,
       image: require('../assets/logo1.jpg'),
     },
     {
@@ -33,7 +31,6 @@ const Messages = () => {
       name: 'Ayesha Ahmed',
       message: 'Thanks for your help! Really appreciate your support on this.',
       time: 'Yesterday',
-      // count: 3,
       image: require('../assets/logo1.jpg'),
     },
     

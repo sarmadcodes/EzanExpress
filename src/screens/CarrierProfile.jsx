@@ -37,11 +37,6 @@ const CarrierProfile = ({navigation, route}) => {
   const [error, setError] =
     useState('');
 
-  /*
-  |--------------------------------------------------------------------------
-  | Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const formatDate = value => {
     if (!value) {
@@ -151,11 +146,6 @@ const CarrierProfile = ({navigation, route}) => {
     flight?.accepting_requests === true &&
     availableSpace > 0;
 
-  /*
-  |--------------------------------------------------------------------------
-  | Existing Request
-  |--------------------------------------------------------------------------
-  */
 
   const getExistingRequest =
     async token => {
@@ -221,11 +211,6 @@ const CarrierProfile = ({navigation, route}) => {
       }
     };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Public Traveler Profile
-  |--------------------------------------------------------------------------
-  */
 
   const loadScreen = async () => {
     try {
@@ -304,11 +289,6 @@ const CarrierProfile = ({navigation, route}) => {
     loadScreen();
   }, [userId, flight?._id]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Refresh Request Status
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     const unsubscribe =
@@ -338,11 +318,6 @@ const CarrierProfile = ({navigation, route}) => {
     return unsubscribe;
   }, [navigation, flight?._id]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Send Request
-  |--------------------------------------------------------------------------
-  */
 
   const handleSendRequest = () => {
     navigation.navigate(
@@ -354,11 +329,6 @@ const CarrierProfile = ({navigation, route}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Request Status
-  |--------------------------------------------------------------------------
-  */
 
   const requestStatus = String(
     existingRequest?.status || '',
@@ -405,11 +375,6 @@ const CarrierProfile = ({navigation, route}) => {
       ? getRequestStatusData()
       : null;
 
-  /*
-  |--------------------------------------------------------------------------
-  | Loading
-  |--------------------------------------------------------------------------
-  */
 
   if (loading) {
     return (
@@ -445,11 +410,6 @@ const CarrierProfile = ({navigation, route}) => {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | Error
-  |--------------------------------------------------------------------------
-  */
 
   if (error) {
     return (
@@ -506,11 +466,6 @@ const CarrierProfile = ({navigation, route}) => {
     );
   }
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <SafeAreaView
@@ -535,7 +490,6 @@ const CarrierProfile = ({navigation, route}) => {
           styles.scrollContent
         }
       >
-        {/* Traveler Profile */}
 
         <View
           style={styles.profileCard}
@@ -615,7 +569,6 @@ const CarrierProfile = ({navigation, route}) => {
           ) : null}
         </View>
 
-        {/* Stats */}
 
         <View style={styles.statsCard}>
           <View style={styles.statItem}>
@@ -703,7 +656,6 @@ const CarrierProfile = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Flight Details */}
 
         <View
           style={styles.sectionCard}
@@ -859,7 +811,6 @@ const CarrierProfile = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Available Space */}
 
         <View
           style={styles.sectionCard}
@@ -1000,7 +951,6 @@ const CarrierProfile = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* Safety */}
 
         {profile?.verified === true ? (
           <View
@@ -1038,7 +988,6 @@ const CarrierProfile = ({navigation, route}) => {
         ) : null}
       </ScrollView>
 
-      {/* Bottom Action */}
 
       <View
         style={styles.stickyFooter}

@@ -16,7 +16,6 @@ const LegalDocumentCard = ({
   return (
     <TouchableOpacity onPress={() => navigation.navigate('ParcelStatus')}
     style={styles.card}>
-      {/* Header */}
       <View style={styles.header}>
         <View style={styles.iconBox}>
           <Text style={styles.iconText}>📄</Text>
@@ -32,7 +31,6 @@ const LegalDocumentCard = ({
         </View>
       </View>
 
-      {/* Route */}
       <View style={styles.routeRow}>
         <View>
           <Text style={styles.code}>{fromCode}</Text>
@@ -47,7 +45,6 @@ const LegalDocumentCard = ({
         </View>
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.time}>🕒 {postedTime}</Text>
       </View>

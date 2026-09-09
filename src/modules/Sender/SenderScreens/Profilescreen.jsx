@@ -20,7 +20,6 @@ const SettingsScreen = ({ navigation }) => {
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
   const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
 
-  // Reusable Component for List Items
   const SettingItem = ({
     icon,
     label,
@@ -76,7 +75,6 @@ const SettingsScreen = ({ navigation }) => {
       <BackBar title="Profile" />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile Card */}
         <TouchableOpacity
           style={styles.profileCard}
           onPress={() => navigation.navigate('ProfileviewScreen')}
@@ -99,7 +97,6 @@ const SettingsScreen = ({ navigation }) => {
           </View>
         </TouchableOpacity>
 
-        {/* Preferences Section */}
         <Text style={styles.sectionTitle}>PREFERENCES</Text>
         <SettingItem
           icon="notifications-outline"
@@ -130,21 +127,13 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Currency')}
         />
 
-        {/* Security Section */}
-        {/* <Text style={styles.sectionTitle}>SECURITY & PRIVACY</Text> */}
         <SettingItem
           icon="lock-closed-outline"
           label="Change Password"
           onPress={() => navigation.navigate('ChangePassword')}
         />
 
-        {/* <SettingItem 
-          icon="shield-checkmark-outline" 
-          label="Privacy Settings" 
-          onPress={() => navigation.navigate('Privacy')} 
-        /> */}
 
-        {/* Support Section */}
         <Text style={styles.sectionTitle}>SUPPORT</Text>
         <SettingItem
           icon="headset-outline"
@@ -162,7 +151,6 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('ComplaintScreen')}
         />
 
-        {/* Log Out Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={OnLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FF5252" />
           <Text style={styles.logoutText}>Log Out</Text>

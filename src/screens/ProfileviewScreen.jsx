@@ -53,7 +53,6 @@ getUser()
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* Profile Image Section */}
           <View style={styles.avatarContainer}>
             <View style={styles.imageWrapper}>
               <Image
@@ -66,7 +65,6 @@ getUser()
             </View>
           </View>
 
-          {/* Customer ID */}
           <View style={styles.idContainer}>
             <Text style={styles.idLabel}>CUSTOMER ID</Text>
             <View style={styles.idBadge}>
@@ -81,7 +79,6 @@ getUser()
 
           <View style={styles.divider} />
 
-          {/* Edit Button */}
           <View style={styles.editRow}>
             <TouchableOpacity
               onPress={() => setIsEditing(true)}
@@ -95,7 +92,6 @@ getUser()
             </TouchableOpacity>
           </View>
 
-          {/* Form */}
           <View style={styles.form}>
             <Text style={styles.inputLabel}>Full Name</Text>
             <View style={styles.inputWrapper}>
@@ -169,7 +165,6 @@ getUser()
             </View>
           </View>
 
-          {/* Save Button */}
           <TouchableOpacity
             style={[
               styles.saveButton,
@@ -181,7 +176,6 @@ getUser()
             <Text style={styles.saveButtonText}>Save Changes</Text>
           </TouchableOpacity>
 
-          {/* Sign Out */}
           <TouchableOpacity style={styles.signOutButton}>
             <Ionicons name="log-out-outline" size={20} color="#EF4444" />
             <Text style={styles.signOutText}>Sign Out</Text>

@@ -17,37 +17,14 @@ import Button from '../components/Button/Button';
 const { width } = Dimensions.get('window');
 
 const WelcomeScreen = ({ navigation }) => {
-  // OLD
-  // const scaleAnim = useRef(new Animated.Value(0.15)).current;
-  // const opacityAnim = useRef(new Animated.Value(0)).current;
 
-  // NEW
   const scaleAnim = useRef(new Animated.Value(0.15)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
   const contentOpacity = useRef(new Animated.Value(0)).current;
   const contentTranslateY = useRef(new Animated.Value(18)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
 
-  // OLD
-  // useEffect(() => {
-  //   Animated.sequence([
-  //     Animated.delay(500),
-  //     Animated.parallel([
-  //       Animated.timing(scaleAnim, {
-  //         toValue: 1,
-  //         duration: 1300,
-  //         useNativeDriver: true,
-  //       }),
-  //       Animated.timing(opacityAnim, {
-  //         toValue: 1,
-  //         duration: 600,
-  //         useNativeDriver: true,
-  //       }),
-  //     ]),
-  //   ]).start();
-  // }, []);
 
-  // NEW
   useEffect(() => {
     Animated.sequence([
       Animated.delay(300),
@@ -129,17 +106,6 @@ const WelcomeScreen = ({ navigation }) => {
             ]}
           />
 
-          {/* <View style={styles.topBadge}>
-            <Ionicons
-              name="earth-outline"
-              size={15}
-              color="#7DBBFF"
-            />
-
-            <Text style={styles.topBadgeText}>
-              Global Delivery Network
-            </Text>
-          </View> */}
         </ImageBackground>
 
         <Animated.View

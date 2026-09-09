@@ -105,11 +105,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
           'Password reset successfully.',
       });
 
-      /*
-       * No automatic login.
-       * resetToken is NOT saved to AsyncStorage.
-       * Remove forgot-password screens from history.
-       */
       navigation.reset({
         index: 0,
         routes: [{ name: 'LoginScreen' }],
@@ -141,7 +136,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.7}
@@ -168,7 +162,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Icon */}
           <View style={styles.iconContainer}>
             <Ionicons
               name="key-outline"
@@ -186,7 +179,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
             Your password must contain at least 8 characters.
           </Text>
 
-          {/* Form */}
           <View style={styles.formContainer}>
             <Input
               type="password"
@@ -212,7 +204,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
             />
           </View>
 
-          {/* Security note */}
           <View style={styles.securityNote}>
             <Ionicons
               name="shield-checkmark-outline"

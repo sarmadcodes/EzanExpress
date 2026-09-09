@@ -34,11 +34,6 @@ const TravelerSearchCard = () => {
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [showToSuggestions, setShowToSuggestions] = useState(false);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Airport Search
-  |--------------------------------------------------------------------------
-  */
 
   const searchAirports = async (query, type) => {
     const value = query.trim();
@@ -111,11 +106,6 @@ const TravelerSearchCard = () => {
     }
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | From Debounce
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     if (
@@ -138,11 +128,6 @@ const TravelerSearchCard = () => {
     return () => clearTimeout(timeout);
   }, [from]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | To Debounce
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     if (
@@ -165,11 +150,6 @@ const TravelerSearchCard = () => {
     return () => clearTimeout(timeout);
   }, [to]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Display Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const getAirportCode = airport => {
     return (
@@ -186,11 +166,6 @@ const TravelerSearchCard = () => {
       .join(', ');
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Selection
-  |--------------------------------------------------------------------------
-  */
 
   const selectFromAirport = airport => {
     const displayValue = getDisplayValue(airport);
@@ -220,11 +195,6 @@ const TravelerSearchCard = () => {
     setShowToSuggestions(false);
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Search
-  |--------------------------------------------------------------------------
-  */
 
   const isDisabled =
     !selectedFrom ||
@@ -255,11 +225,6 @@ const TravelerSearchCard = () => {
     });
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Airport Suggestions
-  |--------------------------------------------------------------------------
-  */
 
   const renderSuggestions = (
     airports,
@@ -353,13 +318,11 @@ const TravelerSearchCard = () => {
       imageStyle={styles.backgroundImage}
       resizeMode="cover">
 
-      {/* Dark Overlay */}
       <View
         pointerEvents="none"
         style={styles.backgroundOverlay}
       />
 
-      {/* Content */}
       <View style={styles.content}>
 
         <View style={styles.topLabel}>
@@ -384,7 +347,6 @@ const TravelerSearchCard = () => {
 
         <View style={styles.searchBox}>
 
-          {/* FROM */}
 
           <View style={styles.fieldContainer}>
             <View style={styles.inputRow}>
@@ -428,7 +390,6 @@ const TravelerSearchCard = () => {
               : null}
           </View>
 
-          {/* Divider */}
 
           <View style={styles.routeDivider}>
             <View style={styles.dividerLine} />
@@ -444,7 +405,6 @@ const TravelerSearchCard = () => {
             <View style={styles.dividerLine} />
           </View>
 
-          {/* TO */}
 
           <View style={styles.fieldContainer}>
             <View style={styles.inputRow}>
@@ -488,7 +448,6 @@ const TravelerSearchCard = () => {
               : null}
           </View>
 
-          {/* SEARCH */}
 
           <TouchableOpacity
             activeOpacity={0.8}
@@ -518,11 +477,6 @@ const TravelerSearchCard = () => {
 export default TravelerSearchCard;
 
 const styles = StyleSheet.create({
-  /*
-  |--------------------------------------------------------------------------
-  | Main Background
-  |--------------------------------------------------------------------------
-  */
 
   container: {
     width: '100%',
@@ -550,11 +504,6 @@ const styles = StyleSheet.create({
     padding: 20,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Heading
-  |--------------------------------------------------------------------------
-  */
 
   topLabel: {
     alignSelf: 'flex-start',
@@ -608,11 +557,6 @@ const styles = StyleSheet.create({
     maxWidth: '88%',
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Search Box
-  |--------------------------------------------------------------------------
-  */
 
   searchBox: {
     backgroundColor: 'rgba(7,17,31,0.90)',
@@ -678,11 +622,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Route Divider
-  |--------------------------------------------------------------------------
-  */
 
   routeDivider: {
     flexDirection: 'row',
@@ -712,11 +651,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Search Button
-  |--------------------------------------------------------------------------
-  */
 
   button: {
     minHeight: 52,
@@ -747,11 +681,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  /*
-  |--------------------------------------------------------------------------
-  | Suggestions
-  |--------------------------------------------------------------------------
-  */
 
   suggestions: {
     backgroundColor: '#0D1929',

@@ -133,8 +133,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
         text1: getBackendError(error),
       });
 
-      // Stay on OTP screen.
-      // No navigation on wrong / expired OTP.
     } finally {
       setVerifying(false);
       setLoading(false);
@@ -173,7 +171,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
           'If an account exists with this email, an OTP has been sent.',
       });
 
-      // Latest OTP is now the valid OTP.
       setOtp('');
       startResendCountdown();
     } catch (error) {
@@ -187,7 +184,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
         text1: getBackendError(error),
       });
 
-      // Backend cooldown is source of truth.
       if (error?.response?.status === 429) {
         startResendCountdown();
       }
@@ -207,7 +203,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
             activeOpacity={0.7}
@@ -230,7 +225,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
         </View>
 
         <View style={styles.content}>
-          {/* Icon */}
           <View style={styles.iconContainer}>
             <Ionicons
               name="mail-unread-outline"
@@ -254,7 +248,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
             {email}
           </Text>
 
-          {/* OTP */}
           <View style={styles.otpContainer}>
             <OtpInput
               numberOfDigits={6}
@@ -281,7 +274,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
             loading={verifying}
           />
 
-          {/* Resend */}
           <View style={styles.resendRow}>
             <Text style={styles.resendLabel}>
               Didn't receive the code?
@@ -312,7 +304,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           </View>
 
-          {/* Expiry */}
           <View style={styles.expiryNote}>
             <Ionicons
               name="time-outline"

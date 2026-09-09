@@ -21,9 +21,6 @@ import { BASE_API_URI } from '../../../constant/API';
 
 const PAGE_SIZE = 20;
 
-/* =========================================================
-   HELPERS
-========================================================= */
 
 const normalizeFlights = payload => {
   if (Array.isArray(payload)) return payload;
@@ -180,9 +177,6 @@ const getStatusConfig = flight => {
   };
 };
 
-/* =========================================================
-   SECTION HEADER
-========================================================= */
 
 const SectionHeader = ({
   title,
@@ -214,13 +208,6 @@ const SectionHeader = ({
   );
 };
 
-/* =========================================================
-   MINIMAL FLIGHT CARD
-
-   ONLY:
-   FROM -> TO
-   STATUS
-========================================================= */
 
 const FlightCard = ({ flight, onPress }) => {
   const route = getRoute(flight);
@@ -233,7 +220,6 @@ const FlightCard = ({ flight, onPress }) => {
       onPress={onPress}
     >
       <View style={styles.routeRow}>
-        {/* FROM */}
 
         <View style={styles.routeSide}>
           <Text numberOfLines={1} style={styles.airportCode}>
@@ -245,7 +231,6 @@ const FlightCard = ({ flight, onPress }) => {
           </Text>
         </View>
 
-        {/* CENTER */}
 
         <View style={styles.routeCenter}>
           <View style={styles.routeLine} />
@@ -261,7 +246,6 @@ const FlightCard = ({ flight, onPress }) => {
           <View style={styles.routeLine} />
         </View>
 
-        {/* TO */}
 
         <View style={[styles.routeSide, styles.routeSideRight]}>
           <Text
@@ -320,9 +304,6 @@ const FlightCard = ({ flight, onPress }) => {
   );
 };
 
-/* =========================================================
-   LIST LOADER
-========================================================= */
 
 const FlightsLoader = () => {
   return (
@@ -336,9 +317,6 @@ const FlightsLoader = () => {
   );
 };
 
-/* =========================================================
-   SCREEN
-========================================================= */
 
 const MyTripsScreen = ({ navigation }) => {
   const [flights, setFlights] = useState([]);
@@ -356,9 +334,6 @@ const MyTripsScreen = ({ navigation }) => {
 
   const [error, setError] = useState('');
 
-  /* =======================================================
-     FETCH FLIGHTS
-  ======================================================= */
 
   const getFlights = async ({
     page = 1,
@@ -446,9 +421,6 @@ const MyTripsScreen = ({ navigation }) => {
     }
   };
 
-  /* =======================================================
-     REFRESH ON SCREEN FOCUS
-  ======================================================= */
 
   useFocusEffect(
     useCallback(() => {
@@ -458,9 +430,6 @@ const MyTripsScreen = ({ navigation }) => {
     }, []),
   );
 
-  /* =======================================================
-     GROUP FLIGHTS
-  ======================================================= */
 
   const groups = useMemo(() => {
     const currentUpcoming = [];
@@ -474,9 +443,6 @@ const MyTripsScreen = ({ navigation }) => {
 
       const tripStatus = flight?.trip_status;
 
-      /*
-       * COMPLETED / CANCELLED / EXPIRED
-       */
 
       if (
         tripStatus === 'completed' ||
@@ -487,18 +453,12 @@ const MyTripsScreen = ({ navigation }) => {
         return;
       }
 
-      /*
-       * REJECTED
-       */
 
       if (verificationStatus === 'rejected') {
         rejected.push(flight);
         return;
       }
 
-      /*
-       * PENDING
-       */
 
       if (
         verificationStatus === 'pending' ||
@@ -508,9 +468,6 @@ const MyTripsScreen = ({ navigation }) => {
         return;
       }
 
-      /*
-       * APPROVED / ACTIVE
-       */
 
       if (
         verificationStatus === 'approved' ||
@@ -555,9 +512,6 @@ const MyTripsScreen = ({ navigation }) => {
     };
   }, [flights]);
 
-  /* =======================================================
-     NAVIGATION
-  ======================================================= */
 
   const openFlightDetails = flight => {
     navigation.navigate('TravelerFlightDetails', {
@@ -571,9 +525,6 @@ const MyTripsScreen = ({ navigation }) => {
     });
   };
 
-  /* =======================================================
-     LOAD MORE
-  ======================================================= */
 
   const loadMore = () => {
     if (
@@ -590,9 +541,6 @@ const MyTripsScreen = ({ navigation }) => {
     });
   };
 
-  /* =======================================================
-     SECTION
-  ======================================================= */
 
   const renderSection = ({
     title,
@@ -630,9 +578,6 @@ const MyTripsScreen = ({ navigation }) => {
     );
   };
 
-  /* =======================================================
-     UI
-  ======================================================= */
 
   return (
     <SafeAreaView
@@ -644,10 +589,6 @@ const MyTripsScreen = ({ navigation }) => {
         backgroundColor="#0B121C"
       />
 
-      {/* ===================================================
-          HEADER
-          ALWAYS VISIBLE
-      =================================================== */}
 
       <View style={styles.header}>
         <View style={styles.headerText}>
@@ -677,9 +618,6 @@ const MyTripsScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      {/* ===================================================
-          CONTENT
-      =================================================== */}
 
       <ScrollView
         style={styles.scroll}
@@ -699,13 +637,11 @@ const MyTripsScreen = ({ navigation }) => {
           />
         }
       >
-        {/* ONLY LIST LOADS */}
 
         {loading ? (
           <FlightsLoader />
         ) : null}
 
-        {/* ERROR */}
 
         {!loading && error ? (
           <View style={styles.errorCard}>
@@ -745,7 +681,6 @@ const MyTripsScreen = ({ navigation }) => {
           </View>
         ) : null}
 
-        {/* EMPTY */}
 
         {!loading &&
         !error &&
@@ -786,13 +721,11 @@ const MyTripsScreen = ({ navigation }) => {
           </View>
         ) : null}
 
-        {/* FLIGHTS */}
 
         {!loading &&
         !error &&
         flights.length > 0 ? (
           <>
-            {/* CURRENT / UPCOMING */}
 
             {renderSection({
               title: 'Current & Upcoming',
@@ -802,7 +735,6 @@ const MyTripsScreen = ({ navigation }) => {
               data: groups.currentUpcoming,
             })}
 
-            {/* PENDING */}
 
             {renderSection({
               title: 'Pending Verification',
@@ -812,7 +744,6 @@ const MyTripsScreen = ({ navigation }) => {
               data: groups.pending,
             })}
 
-            {/* REJECTED */}
 
             {renderSection({
               title: 'Rejected',
@@ -822,7 +753,6 @@ const MyTripsScreen = ({ navigation }) => {
               data: groups.rejected,
             })}
 
-            {/* HISTORY */}
 
             {renderSection({
               title: 'Trip History',
@@ -832,7 +762,6 @@ const MyTripsScreen = ({ navigation }) => {
               data: groups.history,
             })}
 
-            {/* LOAD MORE */}
 
             {pagination.page <
             pagination.totalPages ? (
@@ -887,9 +816,6 @@ const MyTripsScreen = ({ navigation }) => {
 
 export default MyTripsScreen;
 
-/* =========================================================
-   STYLES
-========================================================= */
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -897,7 +823,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#0B121C',
   },
 
-  /* HEADER */
 
   header: {
     minHeight: 88,
@@ -970,7 +895,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
   },
 
-  /* SCROLL */
 
   scroll: {
     flex: 1,
@@ -981,7 +905,6 @@ const styles = StyleSheet.create({
     paddingTop: 18,
   },
 
-  /* SECTION */
 
   section: {
     marginBottom: 27,
@@ -1065,7 +988,6 @@ const styles = StyleSheet.create({
     gap: 11,
   },
 
-  /* MINIMAL FLIGHT CARD */
 
   flightCard: {
     minHeight: 108,
@@ -1204,7 +1126,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* LOADER */
 
   loaderBox: {
     height: 105,
@@ -1231,7 +1152,6 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
 
-  /* ERROR */
 
   errorCard: {
     padding: 14,
@@ -1296,7 +1216,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  /* EMPTY */
 
   emptyCard: {
     minHeight: 330,
@@ -1378,7 +1297,6 @@ const styles = StyleSheet.create({
     marginLeft: 7,
   },
 
-  /* LOAD MORE */
 
   loadMoreButton: {
     height: 47,

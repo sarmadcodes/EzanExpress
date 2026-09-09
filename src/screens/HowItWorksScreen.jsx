@@ -54,7 +54,6 @@ const HowItWorksScreen = ({ navigation }) => {
         backgroundColor="#08111D"
       />
 
-      {/* HEADER */}
       <View style={styles.header}>
         <TouchableOpacity
           activeOpacity={0.7}
@@ -77,7 +76,6 @@ const HowItWorksScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* INTRO */}
         <View style={styles.intro}>
           <View style={styles.introBadge}>
             <Ionicons
@@ -104,7 +102,6 @@ const HowItWorksScreen = ({ navigation }) => {
           </Text>
         </View>
 
-        {/* MAIN VISUAL */}
         <View style={styles.connectionCard}>
           <View style={styles.connectionTop}>
             <View style={styles.personSide}>
@@ -201,7 +198,6 @@ const HowItWorksScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* SENDER */}
         <View style={styles.sectionHeader}>
           <View style={styles.senderMiniIcon}>
             <Ionicons
@@ -258,7 +254,6 @@ const HowItWorksScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* TRAVELER */}
         <View style={styles.sectionHeader}>
           <View style={styles.travelerMiniIcon}>
             <Ionicons
@@ -318,7 +313,6 @@ const HowItWorksScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* SIMPLE DIFFERENCE */}
         <View style={styles.differenceCard}>
           <Text style={styles.differenceHeading}>
             The simple difference
@@ -371,7 +365,6 @@ const HowItWorksScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {/* TRUST */}
         <View style={styles.trustStrip}>
           <View style={styles.trustItem}>
             <Ionicons

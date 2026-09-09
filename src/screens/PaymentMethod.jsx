@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   ScrollView,
   StatusBar,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -16,10 +15,10 @@ const PaymentMethod = ({ navigation }) => {
 
   const PaymentItem = ({ id, icon, title, subtitle, type = 'card' }) => {
     const isSelected = selectedMethod === id;
-    
+
     return (
-      <TouchableOpacity 
-        style={[styles.paymentCard, isSelected && styles.selectedCard]} 
+      <TouchableOpacity
+        style={[styles.paymentCard, isSelected && styles.selectedCard]}
         onPress={() => setSelectedMethod(id)}
         activeOpacity={0.8}
       >
@@ -46,8 +45,7 @@ const PaymentMethod = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
-      
-      {/* Header */}
+
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation?.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -57,7 +55,6 @@ const PaymentMethod = ({ navigation }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Total Amount Card */}
         <View style={styles.summaryCard}>
           <View style={styles.summaryInfo}>
             <Text style={styles.amountLabel}>TOTAL AMOUNT</Text>
@@ -67,21 +64,19 @@ const PaymentMethod = ({ navigation }) => {
               <Text style={styles.routeText}>NYC → LON</Text>
             </View>
           </View>
-          <Image 
-            source={{ uri: 'https://maps.googleapis.com/maps/api/staticmap?center=40.7128,-74.0060&zoom=3&size=200x200&key=YOUR_KEY' }} 
-            style={styles.mapThumb}
-          />
+          <View style={[styles.mapThumb, styles.routeThumb]}>
+            <Ionicons name="map-outline" size={24} color="#3b82f6" />
+          </View>
         </View>
 
-        {/* Saved Cards Section */}
         <Text style={styles.sectionTitle}>Saved Cards</Text>
-        <PaymentItem 
+        <PaymentItem
           id="card_4242"
           icon="credit-card"
           title="Visa ending in 4242"
           subtitle="Expires 12/25"
         />
-        <PaymentItem 
+        <PaymentItem
           id="card_8899"
           icon="credit-card"
           title="Mastercard ending in 8899"
@@ -93,23 +88,22 @@ const PaymentMethod = ({ navigation }) => {
           <Text style={styles.addCardText}>Add New Card</Text>
         </TouchableOpacity>
 
-        {/* Digital Wallets Section */}
         <Text style={styles.sectionTitle}>Digital Wallets</Text>
-        <PaymentItem 
+        <PaymentItem
           id="apple_pay"
           icon="logo-apple"
           type="wallet"
           title="Apple Pay"
           subtitle="Easy & Secure"
         />
-        <PaymentItem 
+        <PaymentItem
           id="google_pay"
           icon="logo-google"
           type="wallet"
           title="Google Pay"
           subtitle="Fast checkout"
         />
-        <PaymentItem 
+        <PaymentItem
           id="paypal"
           icon="logo-paypal"
           type="wallet"
@@ -123,9 +117,8 @@ const PaymentMethod = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      {/* Footer Action */}
       <View style={styles.footer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.payBtn}
           onPress={() => navigation?.navigate('PaymentSuccess')}
         >
@@ -137,11 +130,18 @@ const PaymentMethod = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  routeThumb: {
+    backgroundColor: '#13203045',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: { flex: 1, backgroundColor: '#0a101d' },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16 },
   headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
   content: { padding: 20, paddingBottom: 100 },
-  
+
   summaryCard: { backgroundColor: '#161f31', borderRadius: 16, padding: 16, flexDirection: 'row', justifyContent: 'space-between', marginBottom: 32 },
   amountLabel: { color: '#94a3b8', fontSize: 12, fontWeight: 'bold' },
   amountValue: { color: '#fff', fontSize: 32, fontWeight: 'bold', marginVertical: 4 },
@@ -150,13 +150,13 @@ const styles = StyleSheet.create({
   mapThumb: { width: 80, height: 80, borderRadius: 12 },
 
   sectionTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginBottom: 16, marginTop: 10 },
-  paymentCard: { 
-    backgroundColor: '#161f31', 
-    borderRadius: 12, 
-    padding: 16, 
-    marginBottom: 12, 
-    borderWidth: 2, 
-    borderColor: 'transparent' 
+  paymentCard: {
+    backgroundColor: '#161f31',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent'
   },
   selectedCard: { borderColor: '#1E90FF', backgroundColor: '#1e293b' },
   cardLeft: { flexDirection: 'row', alignItems: 'center' },

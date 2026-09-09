@@ -263,7 +263,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}>
-        {/* STATUS */}
 
         <View
           style={[
@@ -307,7 +306,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* REQUEST SUMMARY */}
 
         <Text style={styles.sectionTitle}>Request</Text>
 
@@ -359,7 +357,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* WHAT SENDER IS SENDING */}
 
         <Text style={styles.sectionTitle}>
           What Sender is Sending
@@ -413,7 +410,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           ) : null}
         </View>
 
-        {/* MESSAGE */}
 
         {request?.message ? (
           <>
@@ -435,7 +431,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* RECEIVER */}
 
         <Text style={styles.sectionTitle}>Receiver</Text>
 
@@ -455,7 +450,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           />
         </View>
 
-        {/* PRICE */}
 
         <Text style={styles.sectionTitle}>Pricing</Text>
 
@@ -487,7 +481,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         </View>
 
-        {/* ACCEPTED STATUS */}
 
         {status === 'approved' ? (
           <View style={styles.acceptedInfo}>
@@ -512,7 +505,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         ) : null}
 
-        {/* PARCEL CODE AFTER PAYMENT */}
 
         {String(request?.payment_status).toLowerCase() === 'paid' &&
         request?.parcel_code ? (
@@ -539,7 +531,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </>
         ) : null}
 
-        {/* REJECTED */}
 
         {status === 'rejected' ? (
           <View style={styles.rejectedInfo}>
@@ -562,7 +553,6 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         ) : null}
 
-        {/* ACTIONS */}
 
         {status === 'pending' ? (
           <View style={styles.actions}>

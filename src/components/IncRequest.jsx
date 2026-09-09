@@ -338,7 +338,6 @@ const IncomingRequestBlock = () => {
         onPress={() =>
           openRequest(request)
         }>
-        {/* HEADER */}
 
         <View style={styles.cardHeader}>
           <View style={styles.itemIcon}>
@@ -407,7 +406,6 @@ const IncomingRequestBlock = () => {
           />
         </View>
 
-        {/* INFO */}
 
         <View style={styles.infoRow}>
           <View style={styles.infoItem}>
@@ -463,7 +461,6 @@ const IncomingRequestBlock = () => {
           </View>
         </View>
 
-        {/* DATE */}
 
         <View
           style={styles.requestedRow}>
@@ -484,7 +481,6 @@ const IncomingRequestBlock = () => {
           </Text>
         </View>
 
-        {/* PENDING ONLY */}
 
         {isPending ? (
           <View
@@ -564,7 +560,6 @@ const IncomingRequestBlock = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          /* ACCEPTED / PAID */
 
           <View
             style={[
@@ -604,7 +599,6 @@ const IncomingRequestBlock = () => {
 
   return (
     <View>
-      {/* SCREEN HEADER */}
 
       <View
         style={styles.screenHeader}>
@@ -643,7 +637,6 @@ const IncomingRequestBlock = () => {
         </TouchableOpacity>
       </View>
 
-      {/* CONTENT */}
 
       {loading ? (
         <View style={styles.stateBox}>

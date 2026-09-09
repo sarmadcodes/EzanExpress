@@ -25,11 +25,6 @@ const Activityscreen = ({navigation}) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
 
-  /*
-  |--------------------------------------------------------------------------
-  | Helpers
-  |--------------------------------------------------------------------------
-  */
 
   const formatDate = value => {
     if (!value) {
@@ -61,11 +56,6 @@ const Activityscreen = ({navigation}) => {
     return `${value} g`;
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Status
-  |--------------------------------------------------------------------------
-  */
 
   const getStatus = request => {
     const requestStatus = String(
@@ -128,11 +118,6 @@ const Activityscreen = ({navigation}) => {
     };
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Get Requests
-  |--------------------------------------------------------------------------
-  */
 
   const getRequests = useCallback(
     async (isRefresh = false) => {
@@ -201,11 +186,6 @@ const Activityscreen = ({navigation}) => {
     [],
   );
 
-  /*
-  |--------------------------------------------------------------------------
-  | Load
-  |--------------------------------------------------------------------------
-  */
 
   useEffect(() => {
     getRequests();
@@ -220,11 +200,6 @@ const Activityscreen = ({navigation}) => {
     return unsubscribe;
   }, [navigation, getRequests]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Open Details
-  |--------------------------------------------------------------------------
-  */
 
   const openRequestDetails = request => {
     navigation.navigate('RequestDetails', {
@@ -232,11 +207,6 @@ const Activityscreen = ({navigation}) => {
     });
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | Card
-  |--------------------------------------------------------------------------
-  */
 
   const renderRequest = request => {
     const status = getStatus(request);
@@ -341,11 +311,6 @@ const Activityscreen = ({navigation}) => {
     );
   };
 
-  /*
-  |--------------------------------------------------------------------------
-  | UI
-  |--------------------------------------------------------------------------
-  */
 
   return (
     <SafeAreaView style={styles.container}>

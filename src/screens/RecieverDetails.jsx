@@ -23,7 +23,6 @@ const ReceiverDetails = ({ navigation }) => {
   const [countryCode, setCountryCode] = useState('+1');
 
   const handleNextStep = () => {
-    // Logic to navigate to Step 3
     console.log('Receiver Info:', { fullName, countryCode, phone, email, address, notes });
     navigation?.navigate('ConfirmScreen'); 
   };
@@ -44,7 +43,6 @@ const ReceiverDetails = ({ navigation }) => {
           <View style={styles.progressContainer}>
                     <View style={styles.progressInfo}>
                       <Text style={styles.stepText}>Step 2 of 3</Text>
-                      {/* <Text style={styles.stepName}>Reviever</Text> */}
                     </View>
                     <View style={styles.progressBarBg}>
                       <View style={[styles.progressBarFill, { width: '66%' }]} />
@@ -53,7 +51,6 @@ const ReceiverDetails = ({ navigation }) => {
 
           <Text style={styles.mainTitle}>Who are we delivering this parcel to?</Text>
 
-          {/* Full Name */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Receiver's Full Name</Text>
             <View style={styles.inputWrapper}>
@@ -68,7 +65,6 @@ const ReceiverDetails = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Mobile Number */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Mobile Number</Text>
             <View style={styles.row}>
@@ -89,7 +85,6 @@ const ReceiverDetails = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Email Address */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Email Address</Text>
             <View style={styles.inputWrapper}>
@@ -106,7 +101,6 @@ const ReceiverDetails = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Delivery Address */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Delivery Address</Text>
             <View style={styles.inputWrapper}>
@@ -126,7 +120,6 @@ const ReceiverDetails = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Notes */}
           <View style={styles.inputSection}>
             <Text style={styles.inputLabel}>Notes to Carrier <Text style={{color: '#64748b'}}>(Optional)</Text></Text>
             <View style={styles.textAreaWrapper}>
@@ -145,7 +138,6 @@ const ReceiverDetails = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* Sticky Footer Button */}
       <View style={styles.footer}>
         <TouchableOpacity style={styles.nextBtn} onPress={handleNextStep} activeOpacity={0.8}>
           <Text style={styles.nextBtnText}>Continue</Text>

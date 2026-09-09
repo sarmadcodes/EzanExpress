@@ -17,19 +17,16 @@ const IdVerificationScreen = () => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
       
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.backButton}>
           <Text style={styles.backArrow}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Identity Verification</Text>
-        <View style={{ width: 40 }} /> {/* Spacer to center title */}
+        <View style={{ width: 40 }} /> 
       </View>
 
       <View style={styles.content}>
-        {/* Illustration Section */}
         <View style={styles.illustrationContainer}>
-           {/* Placeholder for the ID Shield Image */}
           <View style={styles.imagePlaceholder}>
              <View style={styles.shieldCircle}>
                 <Text style={{fontSize: 50}}>🛡️</Text>
@@ -37,7 +34,6 @@ const IdVerificationScreen = () => {
           </View>
         </View>
 
-        {/* Title and Description */}
         <View style={styles.textSection}>
           <Text style={styles.mainTitle}>Let's get you verified</Text>
           <Text style={styles.description}>
@@ -47,7 +43,6 @@ const IdVerificationScreen = () => {
           </Text>
         </View>
 
-        {/* Requirements List */}
         <View style={styles.requirementsContainer}>
           <Text style={styles.listLabel}>WHAT YOU WILL NEED</Text>
           
@@ -83,7 +78,6 @@ const IdVerificationScreen = () => {
         </View>
       </View>
 
-      {/* Footer / Action Section */}
       <View style={styles.footer}>
         <View style={styles.securityNote}>
           <Text style={styles.lockIcon}>🔒</Text>
@@ -100,7 +94,7 @@ const IdVerificationScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0F172A', // Deep dark blue background
+    backgroundColor: '#0F172A',
   },
   header: {
     flexDirection: 'row',

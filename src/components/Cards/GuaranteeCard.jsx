@@ -8,7 +8,6 @@ const GuaranteeCard = ({
 }) => {
   return (
     <View style={styles.card}>
-      {/* Left Content */}
       <View style={styles.textContainer}>
         <Text style={styles.title}>{title}</Text>
 
@@ -18,7 +17,6 @@ const GuaranteeCard = ({
         </Text>
       </View>
 
-      {/* Right Icon */}
       <View style={styles.iconWrapper}>
         <Text style={styles.icon}>🛡️</Text>
       </View>
@@ -37,7 +35,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginVertical: 10,
 
-    // Gradient-like effect using solid fallback
     backgroundColor: '#2563EB',
   },
 

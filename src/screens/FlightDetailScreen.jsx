@@ -86,10 +86,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
 
   const [ticket, setTicket] = useState(null);
 
-  /*
-   * If flight creation succeeds but
-   * ticket upload fails, keep flight id.
-   */
   const [createdFlightId, setCreatedFlightId] = useState(null);
 
   const [errors, setErrors] = useState({});
@@ -314,11 +310,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
     return `${year}-${month}-${day}`;
   };
 
-  /*
-   |--------------------------------------------------------------------------
-   | Capacity Slider
-   |--------------------------------------------------------------------------
-   */
 
   const getPositionFromCapacity = value => {
     if (!sliderWidthRef.current) {
@@ -438,11 +429,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
     }),
   ).current;
 
-  /*
-   |--------------------------------------------------------------------------
-   | Ticket Picker
-   |--------------------------------------------------------------------------
-   */
 
   const selectTicket = () => {
     launchImageLibrary(
@@ -505,11 +491,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
     );
   };
 
-  /*
-   |--------------------------------------------------------------------------
-   | Validation
-   |--------------------------------------------------------------------------
-   */
 
   const validateForm = () => {
     const nextErrors = {};
@@ -571,11 +552,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
     return Object.keys(nextErrors).length === 0;
   };
 
-  /*
-   |--------------------------------------------------------------------------
-   | API
-   |--------------------------------------------------------------------------
-   */
 
   const createFlight = async token => {
     const response = await axios.post(
@@ -624,7 +600,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
       },
     );
 
-    // const flightId = response?.data?.flight?._id || response?.data?._id;
     const flightId =
       response?.data?.flight?._id ||
       response?.data?.data?.flight?._id ||
@@ -693,10 +668,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
 
       let flightId = createdFlightId;
 
-      /*
-       * Don't create duplicate flight
-       * if ticket upload failed.
-       */
       if (!flightId) {
         flightId = await createFlight(token);
 
@@ -753,11 +724,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
     }
   };
 
-  /*
-   |--------------------------------------------------------------------------
-   | Time Pickers
-   |--------------------------------------------------------------------------
-   */
 
   const handleDepartureTimeChange = (event, selectedTime) => {
     if (Platform.OS === 'android') {

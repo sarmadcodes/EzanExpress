@@ -96,8 +96,6 @@ const Input = ({
       return;
     }
 
-    // Ignore the value that this input itself just emitted. This keeps local
-    // typing stable while the number is still incomplete and E.164 is ''.
     if (value === lastEmittedPhoneValue.current) {
       return;
     }
@@ -187,8 +185,6 @@ const Input = ({
 
     setCountry(nextCountry);
 
-    // Reinterpret the currently typed local digits using the newly selected country.
-    // Length is constrained using libphonenumber metadata, not hardcoded country rules.
     const nextDigits = trimPhoneToCountryLength(
       nationalNumber,
       nextCountry.cca2,

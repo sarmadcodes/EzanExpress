@@ -15,7 +15,6 @@ const RequestAccepted = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0a101d" />
 
-      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation?.goBack()}>
           <Ionicons name="arrow-back" size={24} color="#fff" />
@@ -25,7 +24,6 @@ const RequestAccepted = ({ navigation }) => {
       </View>
 
       <View style={styles.content}>
-        {/* Success Icon */}
         <View style={styles.successWrapper}>
           <View style={styles.outerCircle}>
             <View style={styles.innerCircle}>
@@ -39,7 +37,6 @@ const RequestAccepted = ({ navigation }) => {
           You have successfully offered to carry this package. We've notified the sender.
         </Text>
 
-        {/* Parcel Summary */}
         <View style={styles.parcelSummaryCard}>
           <Image
             source={{
@@ -59,10 +56,8 @@ const RequestAccepted = ({ navigation }) => {
           </View>
         </View>
 
-        {/* Steps */}
         <Text style={styles.nextStepsTitle}>Next Steps</Text>
 
-        {/* STEP 1 */}
         <View style={styles.stepRow}>
           <View style={styles.timelineCol}>
             <View style={styles.iconCircleActive}>
@@ -80,7 +75,6 @@ const RequestAccepted = ({ navigation }) => {
           </View>
         </View>
 
-        {/* STEP 2 */}
         <View style={styles.stepRow}>
           <View style={styles.timelineCol}>
             <View style={styles.iconCircleInactive}>
@@ -95,7 +89,6 @@ const RequestAccepted = ({ navigation }) => {
           </View>
         </View>
 
-        {/* STEP 3 */}
         <View style={styles.stepRow}>
           <View style={styles.timelineCol}>
             <View style={styles.iconCircleInactive}>
@@ -110,7 +103,6 @@ const RequestAccepted = ({ navigation }) => {
         </View>
       </View>
 
-      {/* Footer */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.primaryBtn}

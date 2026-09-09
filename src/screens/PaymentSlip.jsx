@@ -10,24 +10,20 @@ const PaymentSlip = () => {
         <BackBar title='Reciept' />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.card}>
-          {/* Header Section */}
           <View style={styles.header}>
             <Image style={{width:100, height:80}} source={require('../assets/logo1.jpg')} />
             <Text style={styles.thankYouText}>Thank you for using our services</Text>
           </View>
 
-          {/* Parcel Code Banner */}
           <View style={styles.codeBanner}>
             <Text style={styles.codeBannerText}>Your Parcel Code: [CODE_HERE]</Text>
           </View>
 
-          {/* Transaction Info */}
           <View style={styles.section}>
             <Text style={styles.labelLine}>Transaction Number: _________________</Text>
             <Text style={styles.labelLine}>Transaction Date & Time: ______________</Text>
           </View>
 
-          {/* Sender Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Sender’ Details</Text>
             <View style={styles.bulletItem}>
@@ -52,7 +48,6 @@ const PaymentSlip = () => {
             </View>
           </View>
 
-          {/* Passenger Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Passenger’s Details</Text>
             <View style={styles.bulletItem}>
@@ -79,7 +74,6 @@ const PaymentSlip = () => {
             </View>
           </View>
 
-          {/* Payment and Code */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Payment and Code</Text>
             <View style={styles.bulletItem}>
@@ -92,7 +86,6 @@ const PaymentSlip = () => {
             </View>
           </View>
 
-          {/* Footer Note */}
           <View style={styles.footerNote}>
             <Text style={styles.footerNoteText}>
               Please do not give the parcel code to the passenger prior to delivering your parcel to the receiver.
