@@ -3,7 +3,7 @@
 const DEV_API_URI = 'http://localhost:6312/api';
 
 const PROD_API_URI =
-  'https://site--ezanbackend--gbppnv599hyt.code.run/api';
+  'https://api.threadique.live/api';
 
 export const BASE_API_URI = __DEV__ ? DEV_API_URI : PROD_API_URI;
 
