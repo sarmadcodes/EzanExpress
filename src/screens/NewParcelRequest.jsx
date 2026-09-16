@@ -844,30 +844,6 @@ const NewParcelRequest = ({navigation, route}) => {
                 </View>
               </View>
 
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabel}>
-                  Parcel price
-                </Text>
-
-                <Text style={styles.priceValue}>
-                  {currency} {Number(quoteAmount || 0).toFixed(2)}
-                </Text>
-              </View>
-
-              {Number(platformFee) > 0 ? (
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>
-                    Platform fee
-                  </Text>
-
-                  <Text style={styles.priceValue}>
-                    {currency} {Number(platformFee).toFixed(2)}
-                  </Text>
-                </View>
-              ) : null}
-
-              <View style={styles.priceDivider} />
-
               <View style={styles.totalRow}>
                 <Text style={styles.totalLabel}>
                   Total

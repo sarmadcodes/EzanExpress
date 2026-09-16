@@ -23,6 +23,7 @@ import { LOADING } from '../context/Loading';
 import { USER } from '../context/User';
 import { BASE_API_URI } from '../constant/API';
 import Input from '../components/Input/Input';
+import AddressAutocomplete from '../components/Input/AddressAutocomplete';
 import Button from '../components/Button/Button';
 
 const RegistrationScreen = ({ navigation }) => {
@@ -664,11 +665,9 @@ const RegistrationScreen = ({ navigation }) => {
               }
             />
 
-            <Input
-              type="text"
+            <AddressAutocomplete
               label="Full Address"
               placeholder="Street, City, Postcode"
-              icon="location-outline"
               required
               value={formData.address}
               onChangeText={value =>

@@ -11,9 +11,23 @@ import {
   LayoutAnimation,
   Platform,
   UIManager,
+  Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../../components/BackBar';
+import { TERMS_URL, PRIVACY_URL } from '../../constant/API';
+
+const openLink = async url => {
+  try {
+    await Linking.openURL(url);
+  } catch (err) {
+    Alert.alert(
+      'Unable to open link',
+      'Please check your internet connection and try again.',
+    );
+  }
+};
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
@@ -43,7 +57,10 @@ const HelpCenter = ({ navigation }) => {
         title: 'Insurance and liability coverage', 
         icon: 'shield-checkmark', 
         color: '#1E90FF',
-        content: 'Ezan Express provides basic coverage for lost or damaged items. For high-value parcels, we recommend purchasing additional premium insurance during the request process.' 
+        content: "Any liability for loss or damage is subject to Ezan Express's Terms & Conditions. Please view our ",
+        linkLabel: 'Terms & Conditions',
+        linkUrl: TERMS_URL,
+        contentAfterLink: '.' 
     },
     { 
         id: 4, 
@@ -126,7 +143,18 @@ const HelpCenter = ({ navigation }) => {
             </View>
             {expandedId === item.id && (
               <View style={styles.articleContent}>
-                <Text style={styles.articleBody}>{item.content}</Text>
+                <Text style={styles.articleBody}>
+                  {item.content}
+                  {item.linkLabel ? (
+                    <Text
+                      style={styles.inlineLink}
+                      accessibilityRole="link"
+                      onPress={() => openLink(item.linkUrl)}>
+                      {item.linkLabel}
+                    </Text>
+                  ) : null}
+                  {item.contentAfterLink || ''}
+                </Text>
               </View>
             )}
           </TouchableOpacity>
@@ -168,8 +196,18 @@ const HelpCenter = ({ navigation }) => {
 
         <Text style={styles.appVersion}>App Version 2.4.1</Text>
         <View style={styles.footerLinks}>
-            <Text style={styles.footerLinkText}>Terms of Service</Text>
-            <Text style={styles.footerLinkText}>Privacy Policy</Text>
+            <TouchableOpacity
+              accessibilityRole="link"
+              onPress={() => openLink(TERMS_URL)}
+              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+              <Text style={styles.footerLinkText}>Terms & Conditions</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="link"
+              onPress={() => openLink(PRIVACY_URL)}
+              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
+              <Text style={styles.footerLinkText}>Privacy Policy</Text>
+            </TouchableOpacity>
         </View>
 
       </ScrollView>
@@ -227,7 +265,8 @@ const styles = StyleSheet.create({
   guideTitle: { color: '#fff', fontSize: 15, fontWeight: 'bold' },
   appVersion: { textAlign: 'center', color: '#475569', fontSize: 12, marginTop: 40 },
   footerLinks: { flexDirection: 'row', justifyContent: 'center', marginTop: 12 },
-  footerLinkText: { color: '#1E90FF', fontSize: 12, marginHorizontal: 10 }
+  footerLinkText: { color: '#1E90FF', fontSize: 12, marginHorizontal: 10 },
+  inlineLink: { color: '#1E90FF', textDecorationLine: 'underline' }
 });
 
 export default HelpCenter;

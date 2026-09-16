@@ -2,12 +2,19 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
+import {
+  pick,
+  types,
+  isErrorWithCode,
+  errorCodes,
+} from '@react-native-documents/picker';
 import Toast from 'react-native-toast-message';
 import axios from 'axios';
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   ActivityIndicator,
+  Alert,
   Animated,
   Image,
   PanResponder,
@@ -36,7 +43,8 @@ const FlightDetailScreen = ({ navigation, route }) => {
 
   const { setUserData } = useContext(USER);
 
-  const showBackButton = route?.params?.from === 'my-trips';
+  const showBackButton =
+    route?.params?.from === 'my-trips' || navigation.canGoBack();
 
   const [departure, setDeparture] = useState('');
 
@@ -430,7 +438,45 @@ const FlightDetailScreen = ({ navigation, route }) => {
   ).current;
 
 
-  const selectTicket = () => {
+  const MAX_TICKET_BYTES = 10 * 1024 * 1024;
+
+  const ALLOWED_TICKET_TYPES = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'application/pdf',
+  ];
+
+  const applyTicket = ({ uri, type, fileName, fileSize }) => {
+    if (!uri) {
+      showErrorToast('Unable to select flight ticket.');
+      return;
+    }
+
+    if (fileSize && fileSize > MAX_TICKET_BYTES) {
+      showErrorToast('Flight ticket must not exceed 10 MB.');
+      return;
+    }
+
+    if (type && !ALLOWED_TICKET_TYPES.includes(type)) {
+      showErrorToast('Only PDF, JPG and PNG flight tickets are allowed.');
+      return;
+    }
+
+    setTicket({
+      uri,
+      type: type || 'application/octet-stream',
+      fileName: fileName || `flight-ticket-${Date.now()}`,
+      fileSize: fileSize || 0,
+    });
+
+    setErrors(previous => ({
+      ...previous,
+      ticket: '',
+    }));
+  };
+
+  const selectTicketFromLibrary = () => {
     launchImageLibrary(
       {
         mediaType: 'photo',
@@ -446,48 +492,53 @@ const FlightDetailScreen = ({ navigation, route }) => {
           showErrorToast(
             response.errorMessage || 'Unable to select flight ticket.',
           );
-
           return;
         }
 
         const asset = response?.assets?.[0];
 
-        if (!asset?.uri) {
-          showErrorToast('Unable to select flight ticket.');
-
-          return;
-        }
-
-        if (asset?.fileSize && asset.fileSize > 10 * 1024 * 1024) {
-          showErrorToast('Flight ticket image must not exceed 10 MB.');
-
-          return;
-        }
-
-        if (
-          asset?.type &&
-          !['image/jpeg', 'image/jpg', 'image/png'].includes(asset.type)
-        ) {
-          showErrorToast('Only JPG and PNG flight ticket images are allowed.');
-
-          return;
-        }
-
-        setTicket({
-          uri: asset.uri,
-
-          type: asset.type || 'image/jpeg',
-
-          fileName: asset.fileName || `flight-ticket-${Date.now()}.jpg`,
-
-          fileSize: asset.fileSize || 0,
+        applyTicket({
+          uri: asset?.uri,
+          type: asset?.type || 'image/jpeg',
+          fileName: asset?.fileName || `flight-ticket-${Date.now()}.jpg`,
+          fileSize: asset?.fileSize,
         });
-
-        setErrors(previous => ({
-          ...previous,
-          ticket: '',
-        }));
       },
+    );
+  };
+
+  const selectTicketDocument = async () => {
+    try {
+      const [file] = await pick({
+        type: [types.pdf, types.images],
+        allowMultiSelection: false,
+      });
+
+      applyTicket({
+        uri: file?.uri,
+        type: file?.type,
+        fileName: file?.name || `flight-ticket-${Date.now()}`,
+        fileSize: file?.size,
+      });
+    } catch (err) {
+      if (isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED) {
+        return;
+      }
+
+      showErrorToast('Unable to select flight ticket.');
+    }
+  };
+
+  const selectTicket = () => {
+    Alert.alert(
+      'Flight ticket',
+      'Choose where to pick your ticket from.',
+      [
+        { text: 'Files (PDF or image)', onPress: selectTicketDocument },
+        { text: 'Photo library', onPress: selectTicketFromLibrary },
+        { text: 'Cancel', style: 'cancel' },
+      ],
+      { cancelable: true },
     );
   };
 
@@ -1252,7 +1303,7 @@ const FlightDetailScreen = ({ navigation, route }) => {
           </Text>
 
           <Text style={styles.uploadHelper}>
-            Upload a clear image of your flight ticket. JPG or PNG up to 10 MB.
+            Upload your flight ticket. PDF, JPG or PNG up to 10 MB.
           </Text>
 
           {ticket ? (
@@ -1266,13 +1317,25 @@ const FlightDetailScreen = ({ navigation, route }) => {
                 errors.ticket && styles.uploadBoxError,
               ]}
             >
-              <Image
-                source={{
-                  uri: ticket.uri,
-                }}
-                resizeMode="cover"
-                style={styles.documentPreview}
-              />
+              {ticket.type === 'application/pdf' ? (
+                <View style={[styles.documentPreview, styles.pdfPreview]}>
+                  <Ionicons
+                    name="document-text-outline"
+                    size={38}
+                    color="#55A9FF"
+                  />
+
+                  <Text style={styles.pdfPreviewLabel}>PDF ticket</Text>
+                </View>
+              ) : (
+                <Image
+                  source={{
+                    uri: ticket.uri,
+                  }}
+                  resizeMode="cover"
+                  style={styles.documentPreview}
+                />
+              )}
 
               <View style={styles.documentOverlay}>
                 <View style={styles.documentInfo}>
@@ -1745,6 +1808,19 @@ const styles = StyleSheet.create({
   documentPreview: {
     width: '100%',
     height: '100%',
+  },
+
+  pdfPreview: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0E1826',
+    gap: 8,
+  },
+
+  pdfPreviewLabel: {
+    color: '#93A6BD',
+    fontSize: 13,
+    fontWeight: '600',
   },
 
   documentOverlay: {
