@@ -152,6 +152,12 @@ const AccountPendingScreen = ({navigation, route}) => {
         <TouchableOpacity onPress={signOut} style={styles.secondaryBtn}>
           <Text style={styles.secondaryBtnText}>Sign out</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => navigation.navigate('DeleteAccount')}
+          style={styles.deleteLink}>
+          <Text style={styles.deleteLinkText}>Delete my account</Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -221,4 +227,6 @@ const styles = StyleSheet.create({
   primaryBtnText: {color: '#fff', fontSize: 15, fontWeight: '700'},
   secondaryBtn: {paddingVertical: 14, alignItems: 'center'},
   secondaryBtnText: {color: '#ffffff90', fontSize: 14, fontWeight: '600'},
+  deleteLink: {paddingVertical: 10, alignItems: 'center'},
+  deleteLinkText: {color: '#FF8A8A', fontSize: 13, fontWeight: '600'},
 });

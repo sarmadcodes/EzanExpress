@@ -5,7 +5,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Image,
   ScrollView,
   Switch,
   StatusBar,
@@ -16,9 +15,21 @@ import { USER } from '../../../context/User';
 import { LOADING } from '../../../context/Loading';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+const initialsOf = (name = '') => {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
+
+  if (!parts.length) {
+    return '?';
+  }
+
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+
+  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+};
+
 const SettingsScreen = ({ navigation }) => {
-  const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
-  const [isFaceIdEnabled, setIsFaceIdEnabled] = useState(false);
 
   const SettingItem = ({
     icon,
@@ -79,53 +90,28 @@ const SettingsScreen = ({ navigation }) => {
           style={styles.profileCard}
           onPress={() => navigation.navigate('ProfileviewScreen')}
         >
-          <Image
-            source={{ uri: 'https://via.placeholder.com/80' }}
-            style={styles.avatar}
-          />
+          <View style={[styles.avatar, styles.avatarFallback]}>
+            <Text style={styles.avatarInitials}>
+              {initialsOf(userData?.name)}
+            </Text>
+          </View>
           <View style={styles.profileInfo}>
             <Text style={styles.userName}>{userData?.name?userData?.name?.split("/")?.join(" "):"...."}</Text>
-            <View style={styles.verifiedBadge}>
-              <Ionicons
-                name="checkmark-done-circle"
-                size={16}
-                color="#1E90FF"
-              />
-              <Text style={styles.verifiedText}>Verified</Text>
-            </View>
+            {userData?.is_account_approved === true ? (
+              <View style={styles.verifiedBadge}>
+                <Ionicons
+                  name="checkmark-done-circle"
+                  size={16}
+                  color="#1E90FF"
+                />
+                <Text style={styles.verifiedText}>Verified</Text>
+              </View>
+            ) : null}
             <Text style={styles.viewProfileText}>View Profile</Text>
           </View>
         </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>PREFERENCES</Text>
-        <SettingItem
-          icon="notifications-outline"
-          label="Notifications"
-          hasSwitch
-          switchValue={isNotificationsEnabled}
-          onSwitchChange={() =>
-            setIsNotificationsEnabled(!isNotificationsEnabled)
-          }
-        />
-        <SettingItem
-          icon="scan-outline"
-          label="Face ID"
-          hasSwitch
-          switchValue={isFaceIdEnabled}
-          onSwitchChange={() => setIsFaceIdEnabled(!isFaceIdEnabled)}
-        />
-        <SettingItem
-          icon="language-outline"
-          label="Language"
-          value="English"
-          onPress={() => navigation.navigate('Language')}
-        />
-        <SettingItem
-          icon="cash-outline"
-          label="Currency"
-          value="USD ($)"
-          onPress={() => navigation.navigate('Currency')}
-        />
+        <Text style={styles.sectionTitle}>ACCOUNT</Text>
 
         <SettingItem
           icon="lock-closed-outline"
@@ -133,6 +119,12 @@ const SettingsScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('ChangePassword')}
         />
 
+
+        <SettingItem
+          icon="trash-outline"
+          label="Delete Account"
+          onPress={() => navigation.navigate('DeleteAccount')}
+        />
 
         <Text style={styles.sectionTitle}>SUPPORT</Text>
         <SettingItem
@@ -145,18 +137,13 @@ const SettingsScreen = ({ navigation }) => {
           label="About Ezan Express"
           onPress={() => navigation.navigate('AboutScreen')}
         />
-        <SettingItem
-          icon="alert-outline"
-          label="Complaints"
-          onPress={() => navigation.navigate('ComplaintScreen')}
-        />
 
         <TouchableOpacity style={styles.logoutButton} onPress={OnLogout}>
           <Ionicons name="log-out-outline" size={20} color="#FF5252" />
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Ezan Express v2.4.0</Text>
+        <Text style={styles.versionText}>Ezan Express v1.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
@@ -176,6 +163,18 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
   },
+  avatarFallback: {
+    backgroundColor: '#132840',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  avatarInitials: {
+    color: '#55A9FF',
+    fontSize: 22,
+    fontWeight: '700',
+  },
+
   avatar: {
     width: 70,
     height: 70,

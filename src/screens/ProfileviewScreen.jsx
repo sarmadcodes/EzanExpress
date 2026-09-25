@@ -1,295 +1,266 @@
 import Ionicons from '@react-native-vector-icons/ionicons';
-import axios from 'axios';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  TextInput,
+  ActivityIndicator,
+  RefreshControl,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
   StatusBar,
+  StyleSheet,
+  Text,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { BASE_API_URI } from '../constant/API';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ProfileviewScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState('Jonathan Davis');
-  const [email, setEmail] = useState('jonathan.davis@example.com');
-  const [account, setAccount] = useState('001122334455');
-  const [phoneNumber, setPhoneNumber] = useState('(555) 123-4567');
-  const [isEditing, setIsEditing] = useState(false);
+import BackBar from '../components/BackBar';
+import api from '../services/api';
 
-  const handleSave = () => {
-    setIsEditing(false);
-  };
+const initialsOf = (name = '') => {
+  const parts = String(name).trim().split(/\s+/).filter(Boolean);
 
-  const getUser = async()=>{
-    let token = await AsyncStorage.getItem("usertoken")
-    await axios.get(`${BASE_API_URI}/login`,{headers:{Authorization:`Bearer ${token}`}}).then((responseData)=>{
-     console.log(responseData,"responseData")
-      setFullName(responseData?.data?.user?.name?.split("/")?.join(" "))
-      setEmail(responseData?.data?.user?.email)
-      setPhoneNumber(responseData?.data?.user?.phone_number)
-    })
+  if (!parts.length) {
+    return '?';
   }
-  useEffect(()=>{
-getUser()
-  },[])
+
+  if (parts.length === 1) {
+    return parts[0].charAt(0).toUpperCase();
+  }
+
+  return `${parts[0].charAt(0)}${parts[parts.length - 1].charAt(0)}`.toUpperCase();
+};
+
+const formatDate = value => {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return date.toLocaleDateString('en-GB', {
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
+const Row = ({ icon, label, value }) => (
+  <View style={styles.row}>
+    <View style={styles.rowIcon}>
+      <Ionicons name={icon} size={18} color="#55A9FF" />
+    </View>
+
+    <View style={styles.rowBody}>
+      <Text style={styles.rowLabel}>{label}</Text>
+      <Text style={styles.rowValue}>{value || 'Not provided'}</Text>
+    </View>
+  </View>
+);
+
+const Badge = ({ active, label }) => (
+  <View style={[styles.badge, active && styles.badgeActive]}>
+    <Ionicons
+      name={active ? 'checkmark-circle' : 'ellipse-outline'}
+      size={15}
+      color={active ? '#22C55E' : '#718399'}
+    />
+    <Text style={[styles.badgeText, active && styles.badgeTextActive]}>
+      {label}
+    </Text>
+  </View>
+);
+
+const ProfileviewScreen = () => {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const loadProfile = useCallback(async () => {
+    setError('');
+
+    try {
+      const { data } = await api.get('/login');
+
+      setUser(data?.user || null);
+    } catch (err) {
+      setError(err?.message || 'Unable to load your profile right now.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#0B121C" />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
+      <BackBar title="My Profile" />
+
+      {loading ? (
+        <View style={styles.centre}>
+          <ActivityIndicator size="large" color="#1363C8" />
+        </View>
+      ) : (
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={styles.content}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={false}
+              onRefresh={loadProfile}
+              tintColor="#1363C8"
+              colors={['#1363C8']}
+            />
+          }
         >
-          <View style={styles.avatarContainer}>
-            <View style={styles.imageWrapper}>
-              <Image
-                source={{ uri: 'https://via.placeholder.com/150' }}
-                style={styles.profileImage}
-              />
-              <TouchableOpacity style={styles.cameraBadge} disabled={!isEditing}>
-                <Ionicons name="camera" size={20} color="#FFF" />
-              </TouchableOpacity>
+          {error ? (
+            <View style={styles.errorBox}>
+              <Ionicons name="alert-circle-outline" size={18} color="#FF7B7B" />
+              <Text style={styles.errorText}>{error}</Text>
             </View>
+          ) : null}
+
+          <View style={styles.avatar}>
+            <Text style={styles.avatarText}>{initialsOf(user?.name)}</Text>
           </View>
 
-          <View style={styles.idContainer}>
-            <Text style={styles.idLabel}>CUSTOMER ID</Text>
-            <View style={styles.idBadge}>
-              <Text style={styles.idText}>EZ-883920</Text>
-            </View>
+          <Text style={styles.name}>{user?.name || 'Your profile'}</Text>
+
+          {user?.user_type ? (
+            <Text style={styles.role}>
+              {user.user_type === 'traveler' ? 'Traveller' : 'Sender'}
+            </Text>
+          ) : null}
+
+          <View style={styles.badges}>
+            <Badge active={user?.is_email_verify === true} label="Email" />
+            <Badge active={user?.is_phone_verify === true} label="Mobile" />
+            <Badge
+              active={user?.is_account_approved === true}
+              label="Approved"
+            />
           </View>
 
-          <View style={styles.verifiedRow}>
-            <Ionicons name="checkmark-done-circle" size={18} color="#1E90FF" />
-            <Text style={styles.verifiedText}>Verified</Text>
+          <View style={styles.card}>
+            <Row icon="mail-outline" label="Email address" value={user?.email} />
+            <Row
+              icon="call-outline"
+              label="Mobile number"
+              value={user?.phone_number}
+            />
+            <Row
+              icon="location-outline"
+              label="Address"
+              value={user?.address}
+            />
+            <Row
+              icon="calendar-outline"
+              label="Member since"
+              value={formatDate(user?.createdAt)}
+            />
           </View>
-
-          <View style={styles.divider} />
-
-          <View style={styles.editRow}>
-            <TouchableOpacity
-              onPress={() => setIsEditing(true)}
-              disabled={isEditing}
-            >
-              <Ionicons
-                name="create-outline"
-                size={22}
-                color={isEditing ? '#6B7280' : '#1E90FF'}
-              />
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.form}>
-            <Text style={styles.inputLabel}>Full Name</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="person-outline" size={22} color="#6B7280" />
-              <TextInput
-                style={styles.input}
-                value={fullName}
-                onChangeText={setFullName}
-                editable={isEditing}
-                placeholderTextColor="#6B7280"
-              />
-            </View>
-
-            <Text style={styles.inputLabel}>Email Address</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="mail-outline" size={22} color="#6B7280" />
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                editable={isEditing}
-                keyboardType="email-address"
-                placeholderTextColor="#6B7280"
-              />
-            </View>
-
-            <Text style={styles.inputLabel}>Bank Account</Text>
-            <View style={styles.inputWrapper}>
-              <Ionicons name="business-outline" size={22} color="#6B7280" />
-              <TextInput
-                style={styles.input}
-                value={account}
-                onChangeText={setAccount}
-                editable={isEditing}
-                keyboardType="phone-pad"
-                placeholderTextColor="#6B7280"
-              />
-            </View>
-
-            <Text style={styles.inputLabel}>Mobile Number</Text>
-            <View style={styles.phoneRow}>
-              <View
-                style={[
-                  styles.inputWrapper,
-                  styles.countryCode,
-                  !isEditing && { opacity: 0.6 },
-                ]}
-              >
-                <Text style={styles.flag}>🇺🇸</Text>
-                <Text style={styles.codeText}>+1</Text>
-                <Ionicons name="chevron-down" size={20} color="#6B7280" />
-              </View>
-
-              <View style={[styles.inputWrapper, styles.phoneInput]}>
-                <TextInput
-                  style={styles.input}
-                  value={phoneNumber}
-                  onChangeText={setPhoneNumber}
-                  editable={isEditing}
-                  keyboardType="phone-pad"
-                  placeholderTextColor="#6B7280"
-                />
-              </View>
-            </View>
-
-            <View style={styles.warningRow}>
-              <Ionicons name="alert-circle-outline" size={16} color="#F59E0B" />
-              <Text style={styles.warningText}>
-                Changing your number requires re-verification.
-              </Text>
-            </View>
-          </View>
-
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              { opacity: isEditing ? 1 : 0.5 },
-            ]}
-            disabled={!isEditing}
-            onPress={handleSave}
-          >
-            <Text style={styles.saveButtonText}>Save Changes</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.signOutButton}>
-            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-            <Text style={styles.signOutText}>Sign Out</Text>
-          </TouchableOpacity>
-
-          <Text style={styles.versionText}>
-            App Version 2.4.0 (Build 892)
-          </Text>
         </ScrollView>
-      </KeyboardAvoidingView>
+      )}
     </SafeAreaView>
   );
 };
 
+export default ProfileviewScreen;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0B121C' },
-  scrollContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  centre: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  content: { padding: 20, paddingBottom: 40 },
 
-  avatarContainer: { alignItems: 'center', marginTop: 20 },
-  imageWrapper: { position: 'relative' },
-  profileImage: {
-    width: 130,
-    height: 130,
-    borderRadius: 65,
-    borderWidth: 2,
-    borderColor: '#FFF',
+  errorBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    backgroundColor: '#2A1418',
+    borderWidth: 1,
+    borderColor: '#4A2026',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 18,
   },
-  cameraBadge: {
-    position: 'absolute',
-    bottom: 5,
-    right: 5,
-    backgroundColor: '#1E90FF',
+  errorText: { flex: 1, color: '#FFB4B4', fontSize: 13 },
+
+  avatar: {
+    alignSelf: 'center',
+    width: 92,
+    height: 92,
+    borderRadius: 46,
+    backgroundColor: '#132840',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { color: '#55A9FF', fontSize: 30, fontWeight: '700' },
+
+  name: {
+    color: '#F5F8FC',
+    fontSize: 21,
+    fontWeight: '700',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  role: {
+    color: '#718399',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+
+  badges: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 16,
+  },
+  badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#121A26',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+  },
+  badgeActive: { borderColor: '#1B4332', backgroundColor: '#0F2118' },
+  badgeText: { color: '#718399', fontSize: 12, fontWeight: '600' },
+  badgeTextActive: { color: '#7BE0A5' },
+
+  card: {
+    backgroundColor: '#121A26',
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    borderRadius: 16,
+    marginTop: 24,
+    paddingHorizontal: 16,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#18222F',
+  },
+  rowIcon: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
+    backgroundColor: '#132840',
     alignItems: 'center',
-  },
-
-  idContainer: {
-    flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 25,
   },
-  idLabel: { color: '#9CA3AF', marginRight: 8 },
-  idBadge: {
-    backgroundColor: '#1F2937',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  idText: { color: '#FFF', fontWeight: 'bold' },
-
-  verifiedRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 12,
-  },
-  verifiedText: { color: '#1E90FF', marginLeft: 6 },
-
-  divider: {
-    height: 1,
-    backgroundColor: '#1F2937',
-    marginVertical: 25,
-  },
-
-  editRow: { alignItems: 'flex-end', marginBottom: 10 },
-
-  form: { width: '100%' },
-  inputLabel: { color: '#FFF', marginBottom: 8 },
-
-  inputWrapper: {
-    backgroundColor: '#161F28',
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    height: 56,
-    marginBottom: 20,
-  },
-  input: { flex: 1, color: '#FFF', fontSize: 16 },
-
-  phoneRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  countryCode: { width: '30%', justifyContent: 'space-between' },
-  phoneInput: { width: '66%' },
-
-  flag: { fontSize: 18 },
-  codeText: { color: '#FFF' },
-
-  warningRow: { flexDirection: 'row', marginBottom: 30 },
-  warningText: { color: '#F59E0B', marginLeft: 6 },
-
-  saveButton: {
-    backgroundColor: '#1E90FF',
-    height: 56,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  saveButtonText: { color: '#FFF', fontWeight: 'bold', fontSize:16 },
-
-  signOutButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 25,
-  },
-  signOutText: { color: '#EF4444', marginLeft: 8 },
-
-  versionText: {
-    color: '#4B5563',
-    textAlign: 'center',
-    marginTop: 35,
-  },
+  rowBody: { flex: 1 },
+  rowLabel: { color: '#718399', fontSize: 12 },
+  rowValue: { color: '#F5F8FC', fontSize: 15, fontWeight: '600', marginTop: 3 },
 });
-
-export default ProfileviewScreen;

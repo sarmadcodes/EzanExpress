@@ -55,6 +55,7 @@ const RegistrationScreen = ({ navigation }) => {
   const [authToken, setAuthToken] = useState('');
 
   const [otpVisible, setOtpVisible] = useState(false);
+  const [verifyStep, setVerifyStep] = useState('phone');
   const [otp, setOtp] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
@@ -297,6 +298,116 @@ const RegistrationScreen = ({ navigation }) => {
     return response?.data;
   };
 
+  const sendPhoneOtp = async token => {
+    const response = await axios.post(
+      `${BASE_API_URI}/register/send-phone-otp`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response?.data;
+  };
+
+  const openPhoneVerification = async token => {
+    try {
+      const otpResponse = await sendPhoneOtp(token);
+
+      showSuccess(
+        otpResponse?.msg ||
+          'Verification code sent to your mobile number.',
+      );
+
+      setOtp('');
+      setVerifyStep('phone');
+      setOtpVisible(true);
+      setEmailVerified(false);
+      setIdentityUploadError('');
+      startResendCooldown();
+
+      return true;
+    } catch (error) {
+      console.log(
+        'SEND PHONE OTP ERROR:',
+        error?.response?.data || error,
+      );
+
+      showError(getBackendError(error));
+
+      return false;
+    }
+  };
+
+  const verifyPhoneOtp = async () => {
+    if (otp.trim().length !== 6 || verifyingOtp) {
+      return;
+    }
+
+    setVerifyingOtp(true);
+
+    try {
+      await axios.post(
+        `${BASE_API_URI}/register/verify-phone-otp`,
+        {
+          otp: otp.trim(),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${registrationToken}`,
+          },
+        },
+      );
+
+      showSuccess('Mobile number verified successfully.');
+
+      setOtp('');
+      setVerifyStep('email');
+
+      await openEmailVerification(registrationToken);
+    } catch (error) {
+      console.log(
+        'VERIFY PHONE OTP ERROR:',
+        error?.response?.data || error,
+      );
+
+      showError(getBackendError(error));
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
+  const resendPhoneOtp = async () => {
+    if (resendSeconds > 0 || resendingOtp) {
+      return;
+    }
+
+    setResendingOtp(true);
+
+    try {
+      const otpResponse = await sendPhoneOtp(registrationToken);
+
+      showSuccess(
+        otpResponse?.msg ||
+          'Verification code sent to your mobile number.',
+      );
+
+      setOtp('');
+      startResendCooldown();
+    } catch (error) {
+      console.log(
+        'RESEND PHONE OTP ERROR:',
+        error?.response?.data || error,
+      );
+
+      showError(getBackendError(error));
+    } finally {
+      setResendingOtp(false);
+    }
+  };
+
   const openEmailVerification = async token => {
     try {
       const otpResponse = await sendEmailOtp(token);
@@ -388,7 +499,7 @@ const RegistrationScreen = ({ navigation }) => {
       }
 
       if (registrationToken) {
-        await openEmailVerification(registrationToken);
+        await openPhoneVerification(registrationToken);
         return;
       }
 
@@ -420,7 +531,7 @@ const RegistrationScreen = ({ navigation }) => {
 
       setRegistrationToken(tempRegistrationToken);
 
-      await openEmailVerification(tempRegistrationToken);
+      await openPhoneVerification(tempRegistrationToken);
     } catch (error) {
       console.log(
         'REGISTER ERROR:',
@@ -686,7 +797,7 @@ const RegistrationScreen = ({ navigation }) => {
               type="phone"
               label="Mobile Number"
               required
-              defaultCountry="US"
+              defaultCountry="GB"
               value={formData.mobile}
               onChangeText={value =>
                 setFormData(previous => ({
@@ -920,14 +1031,20 @@ const RegistrationScreen = ({ navigation }) => {
               <>
                 <View style={styles.otpIcon}>
                   <Ionicons
-                    name="mail-unread-outline"
+                    name={
+                      verifyStep === 'phone'
+                        ? 'chatbox-ellipses-outline'
+                        : 'mail-unread-outline'
+                    }
                     size={30}
                     color="#55A9FF"
                   />
                 </View>
 
                 <Text style={styles.otpTitle}>
-                  Verify your email
+                  {verifyStep === 'phone'
+                    ? 'Verify your mobile number'
+                    : 'Verify your email'}
                 </Text>
 
                 <Text style={styles.otpDescription}>
@@ -938,7 +1055,9 @@ const RegistrationScreen = ({ navigation }) => {
                   numberOfLines={1}
                   style={styles.otpEmail}
                 >
-                  {formData.email.trim()}
+                  {verifyStep === 'phone'
+                    ? formData.mobile.trim()
+                    : formData.email.trim()}
                 </Text>
 
                 <View style={styles.otpInputContainer}>
@@ -963,9 +1082,15 @@ const RegistrationScreen = ({ navigation }) => {
                   text={
                     verifyingOtp
                       ? 'Verifying...'
+                      : verifyStep === 'phone'
+                      ? 'Verify Mobile Number'
                       : 'Verify Email'
                   }
-                  onPress={verifyEmailOtp}
+                  onPress={
+                    verifyStep === 'phone'
+                      ? verifyPhoneOtp
+                      : verifyEmailOtp
+                  }
                   disabled={
                     verifyingOtp ||
                     uploadingIdentity ||
@@ -986,7 +1111,11 @@ const RegistrationScreen = ({ navigation }) => {
                       resendingOtp ||
                       verifyingOtp
                     }
-                    onPress={resendEmailOtp}
+                    onPress={
+                      verifyStep === 'phone'
+                        ? resendPhoneOtp
+                        : resendEmailOtp
+                    }
                   >
                     <Text
                       style={[

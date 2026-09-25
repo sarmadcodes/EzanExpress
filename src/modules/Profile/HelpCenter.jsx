@@ -4,7 +4,6 @@ import {
   StyleSheet,
   View,
   Text,
-  TextInput,
   ScrollView,
   TouchableOpacity,
   StatusBar,
@@ -16,7 +15,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import BackBar from '../../components/BackBar';
-import { TERMS_URL, PRIVACY_URL } from '../../constant/API';
+import {
+  TERMS_URL,
+  PRIVACY_URL,
+  SUPPORT_EMAIL,
+  SUPPORT_URL,
+} from '../../constant/API';
 
 const openLink = async url => {
   try {
@@ -34,7 +38,6 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const HelpCenter = ({ navigation }) => {
-  const [activeTab, setActiveTab] = useState('General');
   const [expandedId, setExpandedId] = useState(null);
 
   const articles = [
@@ -76,15 +79,6 @@ const HelpCenter = ({ navigation }) => {
     setExpandedId(expandedId === id ? null : id);
   };
 
-  const QuickAction = ({ icon, label }) => (
-    <TouchableOpacity style={styles.actionItem} activeOpacity={0.7}>
-      <View style={styles.actionIconBox}>
-        <Ionicons name={icon} size={22} color="#3b82f6" />
-      </View>
-      <Text style={styles.actionLabel}>{label}</Text>
-    </TouchableOpacity>
-  );
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" />
@@ -94,35 +88,6 @@ const HelpCenter = ({ navigation }) => {
       
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.mainGreeting}>Hello! How can Ezan Express assist you today?</Text>
-
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={20} color="#64748b" style={{ marginRight: 10 }} />
-          <TextInput 
-            placeholder="Search for answers..." 
-            placeholderTextColor="#64748b"
-            style={styles.searchInput}
-          />
-        </View>
-
-        <Text style={styles.sectionHeading}>QUICK ACTIONS</Text>
-        <View style={styles.actionRow}>
-          <QuickAction icon="location" label="Track Order" />
-          <QuickAction icon="warning" label="Report Issue" />
-          <QuickAction icon="card" label="Payments" />
-          <QuickAction icon="shield-checkmark" label="Safety" />
-        </View>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.tabContainer}>
-          {['General', 'Sending', 'Traveling', 'Trust & Safety'].map((tab) => (
-            <TouchableOpacity 
-              key={tab} 
-              style={[styles.tab, activeTab === tab && styles.activeTab]}
-              onPress={() => setActiveTab(tab)}
-            >
-              <Text style={[styles.tabText, activeTab === tab && styles.activeTabText]}>{tab}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
 
         <Text style={styles.sectionHeading}>Popular Articles</Text>
         {articles.map((item) => (
@@ -163,38 +128,32 @@ const HelpCenter = ({ navigation }) => {
 
         <View style={styles.supportCard}>
           <Text style={styles.supportTitle}>Still need help?</Text>
-          <Text style={styles.supportSub}>Our support team is available 24/7 to assist you with any issues.</Text>
-          
-          <TouchableOpacity style={styles.liveChatBtn} activeOpacity={0.8}>
-            <Ionicons name="chatbubble-ellipses" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.liveChatText}>Start Live Chat</Text>
+          <Text style={styles.supportSub}>
+            Email our support team and we will get back to you.
+          </Text>
+
+          <TouchableOpacity
+            style={styles.liveChatBtn}
+            activeOpacity={0.8}
+            accessibilityRole="button"
+            onPress={() => openLink(`mailto:${SUPPORT_EMAIL}`)}
+          >
+            <Ionicons name="mail" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.liveChatText}>Email Support</Text>
           </TouchableOpacity>
 
-          <View style={styles.contactRow}>
-            <TouchableOpacity style={styles.contactBtn}>
-              <Ionicons name="mail" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.contactBtnText}>Email</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.contactBtn}>
-              <Ionicons name="call" size={18} color="#fff" style={{ marginRight: 8 }} />
-              <Text style={styles.contactBtnText}>Phone</Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={styles.contactBtn}
+            activeOpacity={0.8}
+            accessibilityRole="link"
+            onPress={() => openLink(SUPPORT_URL)}
+          >
+            <Ionicons name="help-circle" size={18} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.contactBtnText}>Visit Help Centre</Text>
+          </TouchableOpacity>
         </View>
 
-        <Text style={styles.sectionHeading}>New to Ezan?</Text>
-        <View style={styles.footerCardsRow}>
-            <TouchableOpacity style={[styles.guideCard, { backgroundColor: '#1e3a8a' }]}>
-                <Text style={styles.guideType}>GUIDE</Text>
-                <Text style={styles.guideTitle}>How to pack securely</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.guideCard, { backgroundColor: '#064e3b' }]}>
-                <Text style={styles.guideType}>SAFETY</Text>
-                <Text style={styles.guideTitle}>Verifying your carrier</Text>
-            </TouchableOpacity>
-        </View>
-
-        <Text style={styles.appVersion}>App Version 2.4.1</Text>
+        <Text style={styles.appVersion}>App Version 1.0</Text>
         <View style={styles.footerLinks}>
             <TouchableOpacity
               accessibilityRole="link"

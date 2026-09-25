@@ -7,7 +7,6 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import Homescreen from './TravelerScreens/HomeScreen';
 import MyTripsScreen from './TravelerScreens/MyTripsScreen';
 import WalletScreen from './TravelerScreens/WalletScreen';
-import Messagescreen from '../Sender/SenderScreens/Messagescreen';
 import Profilescreen from '../Sender/SenderScreens/Profilescreen';
 import TravelerFlightDetailsScreen from './TravelerScreens/TravelerFlightDetailsScreen';
 
@@ -25,9 +24,6 @@ const TravelerDashboard = () => {
 
       case 'Wallet':
         return 'wallet';
-
-      case 'Messages':
-        return 'chatbubble-ellipses';
 
       case 'Profile':
         return 'person';
@@ -89,11 +85,6 @@ const TravelerDashboard = () => {
       <Tab.Screen
         name="Wallet"
         component={WalletScreen}
-      />
-
-      <Tab.Screen
-        name="Messages"
-        component={Messagescreen}
       />
 
       <Tab.Screen

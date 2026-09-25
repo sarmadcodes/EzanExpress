@@ -22,21 +22,17 @@ import RequestSuccess from './src/screens/RequestSuccess';
 import NewParcelRequest from './src/screens/NewParcelRequest';
 import CarrierProfile from './src/screens/CarrierProfile';
 import TravelerRequestDetails from './src/screens/TravelerRequestDetails';
-import ReceiverDetails from './src/screens/RecieverDetails';
 import Notifications from './src/screens/Notifications';
-import ConfirmScreen from './src/screens/ConfirmScreen';
 import RequestDetails from './src/screens/RequestDetails';
-import RequestAccepted from './src/screens/RequestAccepted';
 import RequestRejected from './src/screens/RequestRejected';
 import AboutScreen from './src/modules/Profile/AboutScreen';
 import HelpCenter from './src/modules/Profile/HelpCenter';
-import ParcelStatus from './src/screens/ParcelStatus';
-import PaymentMethod from './src/screens/PaymentMethod';
 import PaymentSuccess from './src/screens/PaymentSuccess';
 import PaymentScreen from './src/screens/PaymentScreen';
 import DeliveryConfirmation from './src/screens/DeliveryConfirmation';
 import RatePassengerScreen from './src/screens/RatePassengerScreen';
 import AccountPendingScreen from './src/screens/AccountPendingScreen';
+import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
 import PaymentSlip from './src/screens/PaymentSlip';
 import { LOADING } from './src/context/Loading';
 import { USER } from './src/context/User';
@@ -96,6 +92,11 @@ const App = () => {
               <Stack.Screen name="Notifications" component={Notifications} />
 
               <Stack.Screen
+                name="DeleteAccount"
+                component={DeleteAccountScreen}
+              />
+
+              <Stack.Screen
                 name="AccountPending"
                 component={AccountPendingScreen}
               />
@@ -143,23 +144,12 @@ const App = () => {
   component={TravelerRequestDetails}
   options={{headerShown: false}}
 />
-              <Stack.Screen
-                name="ReceiverDetails"
-                component={ReceiverDetails}
-              />
-              <Stack.Screen name="ConfirmScreen" component={ConfirmScreen} />
 
               <Stack.Screen name="RequestDetails" component={RequestDetails} />
-              <Stack.Screen
-                name="RequestAccepted"
-                component={RequestAccepted}
-              />
               <Stack.Screen
                 name="RequestRejected"
                 component={RequestRejected}
               />
-              <Stack.Screen name="ParcelStatus" component={ParcelStatus} />
-              <Stack.Screen name="PaymentMethod" component={PaymentMethod} />
               <Stack.Screen
                     name="PaymentScreen"
                     component={PaymentScreen}

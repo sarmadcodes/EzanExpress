@@ -48,7 +48,7 @@ const Input = ({
   maximumDate = new Date(),
   minimumDate,
 
-  defaultCountry = 'US',
+  defaultCountry = 'GB',
   selectedCountryCode,
   onPhoneChange,
 

@@ -6,7 +6,6 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 
 import Homescreen from './SenderScreens/Homescreen';
 import Activityscreen from './SenderScreens/Activityscreen';
-import Messagescreen from './SenderScreens/Messagescreen';
 import Profilescreen from './SenderScreens/Profilescreen';
 
 const Tab = createBottomTabNavigator();
@@ -19,9 +18,6 @@ const SenderDashboard = () => {
 
       case 'Activity':
         return 'layers';
-
-      case 'Messages':
-        return 'chatbubble-ellipses';
 
       case 'Profile':
         return 'person';
@@ -75,11 +71,6 @@ const SenderDashboard = () => {
       <Tab.Screen
         name="Activity"
         component={Activityscreen}
-      />
-
-      <Tab.Screen
-        name="Messages"
-        component={Messagescreen}
       />
 
       <Tab.Screen
