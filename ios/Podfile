@@ -9,6 +9,7 @@ platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
+
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
@@ -19,16 +20,64 @@ target 'EzanExpress' do
 
   use_react_native!(
     :path => config[:reactNativePath],
-    # An absolute path to your application root.
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
 
+  # OLD
+  # post_install do |installer|
+  #   react_native_post_install(
+  #     installer,
+  #     config[:reactNativePath],
+  #     :mac_catalyst_enabled => false,
+  #   )
+  #
+  #   installer.pods_project.targets.each do |target|
+  #     target.build_configurations.each do |build_config|
+  #       build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'
+  #       build_config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+  #       build_config.build_settings['GCC_C_LANGUAGE_STANDARD'] = 'gnu17'
+  #     end
+  #   end
+  # end
+
+  # NEW
   post_install do |installer|
     react_native_post_install(
       installer,
       config[:reactNativePath],
       :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
     )
+
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |build_config|
+        build_config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'gnu++20'
+        build_config.build_settings['CLANG_CXX_LIBRARY'] = 'libc++'
+        build_config.build_settings['GCC_C_LANGUAGE_STANDARD'] = 'gnu17'
+      end
+    end
+
+    # Fix fmt 11.0.2 build error with Xcode 26.5 / Apple Clang 21
+    fmt_base_path = File.join(
+      installer.sandbox.root.to_s,
+      'fmt',
+      'include',
+      'fmt',
+      'base.h'
+    )
+
+    if File.exist?(fmt_base_path)
+      File.chmod(0644, fmt_base_path)
+
+      fmt_content = File.read(fmt_base_path)
+
+      fmt_content.gsub!(
+        '#elif defined(__apple_build_version__) && __apple_build_version__ < 14000029L',
+        '#elif defined(__apple_build_version__)'
+      )
+
+      File.write(fmt_base_path, fmt_content)
+
+      Pod::UI.puts 'Applied Xcode 26 fmt consteval fix'.green
+    end
   end
 end
