@@ -7,7 +7,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import Ionicons from '@react-native-vector-icons/ionicons';
 
-const BackBar = ({ title, showBackButton = true }) => {
+const BackBar = ({ title, showBackButton = true, rightAction = null }) => {
   const navigation = useNavigation();
 
   return (
@@ -34,6 +34,19 @@ const BackBar = ({ title, showBackButton = true }) => {
         ) : (
           <View style={{ width: 30, height: 30 }} />
         )}
+
+        {rightAction ? (
+          <TouchableOpacity
+            onPress={rightAction.onPress}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons
+              name={rightAction.icon || 'ellipsis-horizontal'}
+              size={24}
+              color="#fff"
+            />
+          </TouchableOpacity>
+        ) : null}
 
         <View
           style={{

@@ -72,6 +72,13 @@ const HelpCenter = ({ navigation }) => {
         color: '#10b981',
         content: 'Payment is released to the traveler once the receiver confirms the delivery in the app. This ensures a secure transaction for both parties.' 
     },
+    {
+        id: 5,
+        title: 'How do I report or block someone?',
+        icon: 'flag',
+        color: '#ef4444',
+        content: 'Open the profile or the request, tap the menu in the top right, then choose Report or Block. Our team reviews every report, and blocking means neither of you can see or contact the other. You can manage your blocked list in Profile, under Blocked Users.'
+    },
   ];
 
   const toggleExpand = (id) => {

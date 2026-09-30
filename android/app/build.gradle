@@ -79,11 +79,11 @@ android {
 
     namespace "com.ezanexpress"
     defaultConfig {
-        applicationId "com.ezanexpress"
+        applicationId "com.ezanexpress.new"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 3
+        versionName "1.1"
     }
     signingConfigs {
         debug {

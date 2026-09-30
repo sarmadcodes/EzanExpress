@@ -121,6 +121,12 @@ const SettingsScreen = ({ navigation }) => {
 
 
         <SettingItem
+          icon="shield-outline"
+          label="Blocked Users"
+          onPress={() => navigation.navigate('BlockedUsers')}
+        />
+
+        <SettingItem
           icon="trash-outline"
           label="Delete Account"
           onPress={() => navigation.navigate('DeleteAccount')}

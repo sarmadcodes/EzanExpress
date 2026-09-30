@@ -33,6 +33,7 @@ import DeliveryConfirmation from './src/screens/DeliveryConfirmation';
 import RatePassengerScreen from './src/screens/RatePassengerScreen';
 import AccountPendingScreen from './src/screens/AccountPendingScreen';
 import DeleteAccountScreen from './src/screens/DeleteAccountScreen';
+import BlockedUsersScreen from './src/screens/BlockedUsersScreen';
 import PaymentSlip from './src/screens/PaymentSlip';
 import { LOADING } from './src/context/Loading';
 import { USER } from './src/context/User';
@@ -91,6 +92,10 @@ const App = () => {
               />
               <Stack.Screen name="Notifications" component={Notifications} />
 
+              <Stack.Screen
+                name="BlockedUsers"
+                component={BlockedUsersScreen}
+              />
               <Stack.Screen
                 name="DeleteAccount"
                 component={DeleteAccountScreen}

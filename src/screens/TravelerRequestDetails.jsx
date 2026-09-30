@@ -17,6 +17,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import BackBar from '../components/BackBar';
+import ReportUserSheet from '../components/ReportUserSheet';
+import api from '../services/api';
 import {BASE_API_URI} from '../constant/API';
 
 const TravelerRequestDetails = ({navigation, route}) => {
@@ -24,6 +26,61 @@ const TravelerRequestDetails = ({navigation, route}) => {
 
   const [request, setRequest] = useState(initialRequest);
   const [actionLoading, setActionLoading] = useState('');
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const senderId = request?.sender_id;
+
+  const blockSender = async () => {
+    try {
+      const {data} = await api.post(
+        `/moderation/users/${senderId}/block`,
+      );
+
+      Alert.alert(
+        'Sender blocked',
+        data?.msg ||
+          'You will no longer see each other in the app.',
+        [{text: 'OK', onPress: () => navigation.goBack()}],
+      );
+    } catch (err) {
+      Alert.alert(
+        'Could not block',
+        err?.message || 'Please try again.',
+      );
+    }
+  };
+
+  const openModeration = () => {
+    if (!senderId) {
+      return;
+    }
+
+    Alert.alert('This sender', 'What would you like to do?', [
+      {
+        text: 'Report this sender',
+        style: 'destructive',
+        onPress: () => setReportOpen(true),
+      },
+      {
+        text: 'Block this sender',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert(
+            'Block this sender?',
+            'You will stop seeing each other in the app, and neither of you can send requests.',
+            [
+              {text: 'Cancel', style: 'cancel'},
+              {
+                text: 'Block',
+                style: 'destructive',
+                onPress: blockSender,
+              },
+            ],
+          ),
+      },
+      {text: 'Cancel', style: 'cancel'},
+    ]);
+  };
 
   const status = String(request?.status || 'pending').toLowerCase();
 
@@ -257,7 +314,13 @@ const TravelerRequestDetails = ({navigation, route}) => {
       />
 
       <View style={styles.header}>
-        <BackBar title="Request Details" />
+        <BackBar
+          title="Request Details"
+          rightAction={{
+            icon: 'ellipsis-horizontal',
+            onPress: openModeration,
+          }}
+        />
       </View>
 
       <ScrollView
@@ -598,6 +661,29 @@ const TravelerRequestDetails = ({navigation, route}) => {
           </View>
         ) : null}
       </ScrollView>
+
+      <ReportUserSheet
+        visible={reportOpen}
+        userId={senderId}
+        userName="this sender"
+        requestId={request?._id}
+        onClose={() => setReportOpen(false)}
+        onDone={result => {
+          setReportOpen(false);
+
+          Alert.alert(
+            'Thanks for telling us',
+            result?.message || 'Report submitted.',
+            [
+              {
+                text: 'OK',
+                onPress: () =>
+                  result?.blocked ? navigation.goBack() : undefined,
+              },
+            ],
+          );
+        }}
+      />
     </SafeAreaView>
   );
 };

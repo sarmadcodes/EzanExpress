@@ -5,6 +5,7 @@ import React, {useEffect, useState} from 'react';
 
 import {
   ActivityIndicator,
+  Alert,
   ScrollView,
   StatusBar,
   StyleSheet,
@@ -16,6 +17,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 
 import BackBar from '../components/BackBar';
+import ReportUserSheet from '../components/ReportUserSheet';
+import api from '../services/api';
 import {BASE_API_URI} from '../constant/API';
 
 const CarrierProfile = ({navigation, route}) => {
@@ -36,6 +39,85 @@ const CarrierProfile = ({navigation, route}) => {
 
   const [error, setError] =
     useState('');
+
+  const [reportOpen, setReportOpen] =
+    useState(false);
+
+
+  const openModeration = () => {
+    if (!userId) {
+      return;
+    }
+
+    Alert.alert(
+      profile?.name || 'Traveler',
+      'What would you like to do?',
+      [
+        {
+          text: 'Report this user',
+          style: 'destructive',
+          onPress: () =>
+            setReportOpen(true),
+        },
+        {
+          text: 'Block this user',
+          style: 'destructive',
+          onPress: confirmBlock,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+    );
+  };
+
+
+  const blockUser = async () => {
+    try {
+      const {data} = await api.post(
+        `/moderation/users/${userId}/block`,
+      );
+
+      Alert.alert(
+        'User blocked',
+        data?.msg ||
+          'You will no longer see each other in the app.',
+        [
+          {
+            text: 'OK',
+            onPress: () =>
+              navigation.goBack(),
+          },
+        ],
+      );
+    } catch (err) {
+      Alert.alert(
+        'Could not block',
+        err?.message ||
+          'Please try again.',
+      );
+    }
+  };
+
+
+  const confirmBlock = () => {
+    Alert.alert(
+      'Block this user?',
+      'You will stop seeing each other in search, and neither of you can send requests.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: blockUser,
+        },
+      ],
+    );
+  };
 
 
   const formatDate = value => {
@@ -479,7 +561,13 @@ const CarrierProfile = ({navigation, route}) => {
       <View
         style={styles.headerPadding}
       >
-        <BackBar title="Traveler Profile" />
+        <BackBar
+          title="Traveler Profile"
+          rightAction={{
+            icon: 'ellipsis-horizontal',
+            onPress: openModeration,
+          }}
+        />
       </View>
 
       <ScrollView
@@ -1063,6 +1151,33 @@ const CarrierProfile = ({navigation, route}) => {
           </View>
         )}
       </View>
+
+      <ReportUserSheet
+        visible={reportOpen}
+        userId={userId}
+        userName={profile?.name}
+        onClose={() =>
+          setReportOpen(false)
+        }
+        onDone={result => {
+          setReportOpen(false);
+
+          Alert.alert(
+            'Thanks for telling us',
+            result?.message ||
+              'Report submitted.',
+            [
+              {
+                text: 'OK',
+                onPress: () =>
+                  result?.blocked
+                    ? navigation.goBack()
+                    : undefined,
+              },
+            ],
+          );
+        }}
+      />
     </SafeAreaView>
   );
 };
