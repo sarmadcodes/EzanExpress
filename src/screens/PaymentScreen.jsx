@@ -20,6 +20,7 @@ import {SafeAreaView} from 'react-native-safe-area-context';
 import BackBar from '../components/BackBar';
 import Button from '../components/Button/Button';
 import {BASE_API_URI} from '../constant/API';
+import { getBackendError } from '../utils/getBackendError';
 
 const PaymentScreen = ({navigation, route}) => {
   const request = route?.params?.request || {};
@@ -308,12 +309,7 @@ await Linking.openURL(checkoutUrl);
           error,
       );
 
-      const message =
-        error?.response?.data?.msg ||
-        error?.response?.data?.message ||
-        error?.response?.data?.error ||
-        error?.message ||
-        'Unable to start payment.';
+      const message = getBackendError(error);
 
       Alert.alert(
         'Payment Error',

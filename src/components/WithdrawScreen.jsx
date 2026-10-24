@@ -7,6 +7,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import BackBar from './BackBar';
 import { BASE_API_URI } from '../constant/API';
+import { getBackendError } from '../utils/getBackendError';
 
 const value = item => Number(item || 0);
 
@@ -48,7 +49,7 @@ const WithdrawScreen = () => {
       setFeedback({
         type: 'error',
         title: 'Unable to load withdrawal details',
-        message: error?.response?.data?.error || error?.response?.data?.message || error.message || 'Please try again.',
+        message: getBackendError(error),
       });
     } finally {
       setLoading(false);
@@ -85,7 +86,7 @@ const WithdrawScreen = () => {
       setFeedback({
         type: 'error',
         title: 'Unable to request withdrawal',
-        message: error?.response?.data?.error || error?.response?.data?.message || error.message || 'Please try again.',
+        message: getBackendError(error),
       });
     } finally {
       setSubmitting(false);

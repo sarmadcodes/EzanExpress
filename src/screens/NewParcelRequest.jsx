@@ -20,6 +20,7 @@ import BackBar from '../components/BackBar';
 import Input from '../components/Input/Input';
 import Button from '../components/Button/Button';
 import {BASE_API_URI} from '../constant/API';
+import { getBackendError } from '../utils/getBackendError';
 
 const PARCEL_TYPES = [
   'Medicine',
@@ -98,16 +99,6 @@ const NewParcelRequest = ({navigation, route}) => {
       type: 'success',
       text1: text,
     });
-  };
-
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.msg ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Something went wrong. Please try again.'
-    );
   };
 
   const formatDate = value => {

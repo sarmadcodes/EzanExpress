@@ -18,6 +18,7 @@ import { LOADING } from '../context/Loading';
 import { BASE_API_URI } from '../constant/API';
 import Input from '../components/Input/Input';
 import Button from '../components/Button/Button';
+import { getBackendError } from '../utils/getBackendError';
 
 const ResetPasswordScreen = ({ navigation, route }) => {
   const BG_COLOR = '#050B18';
@@ -30,14 +31,6 @@ const ResetPasswordScreen = ({ navigation, route }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Unable to reset password. Please try again.'
-    );
-  };
 
   const resetPassword = async () => {
     if (submitting) {

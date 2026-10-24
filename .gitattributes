@@ -1,0 +1,5 @@
+# Shell scripts must keep LF endings. Git on Windows would otherwise check
+# them out with CRLF, which Linux cannot parse as a shebang, breaking the
+# container build.
+gradlew text eol=lf
+*.sh text eol=lf

@@ -9,11 +9,10 @@ import {
 } from 'react-native';
 
 import Input from './Input';
-import { GEOAPIFY_API_KEY } from '../../constant/API';
+import { BASE_API_URI } from '../../constant/API';
 
 const MIN_QUERY_LENGTH = 3;
 const DEBOUNCE_MS = 400;
-const RESULT_LIMIT = 5;
 
 const AddressAutocomplete = ({
   label = 'Full Address',
@@ -22,12 +21,19 @@ const AddressAutocomplete = ({
   onChangeText,
   required = false,
   error,
+  // Called with false while a chosen street still needs a house number, so the
+  // parent form can keep its submit button disabled.
+  onValidityChange,
 }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [visible, setVisible] = useState(false);
   const [searching, setSearching] = useState(false);
   const [searchFailed, setSearchFailed] = useState(false);
   const [searched, setSearched] = useState(false);
+
+  // Set only when the chosen suggestion had no house number of its own.
+  const [baseAddress, setBaseAddress] = useState('');
+  const [houseNumber, setHouseNumber] = useState('');
 
   const selectedRef = useRef('');
   const requestRef = useRef(0);
@@ -39,7 +45,7 @@ const AddressAutocomplete = ({
       return;
     }
 
-    if (query.length < MIN_QUERY_LENGTH || !GEOAPIFY_API_KEY) {
+    if (query.length < MIN_QUERY_LENGTH) {
       setSuggestions([]);
       setVisible(false);
       setSearched(false);
@@ -56,11 +62,10 @@ const AddressAutocomplete = ({
       setVisible(true);
 
       try {
+        // Proxied through our backend; the Geoapify key stays server side.
         const url =
-          'https://api.geoapify.com/v1/geocode/autocomplete' +
-          `?text=${encodeURIComponent(query)}` +
-          `&limit=${RESULT_LIMIT}` +
-          `&apiKey=${encodeURIComponent(GEOAPIFY_API_KEY)}`;
+          `${BASE_API_URI}/address/autocomplete` +
+          `?text=${encodeURIComponent(query)}`;
 
         const response = await fetch(url);
 
@@ -74,13 +79,11 @@ const AddressAutocomplete = ({
           return;
         }
 
-        const features = Array.isArray(result?.features) ? result.features : [];
+        const results = Array.isArray(result?.suggestions)
+          ? result.suggestions
+          : [];
 
-        setSuggestions(
-          features
-            .map(feature => feature?.properties)
-            .filter(properties => properties?.formatted),
-        );
+        setSuggestions(results.filter(item => item?.formatted));
 
         setSearched(true);
       } catch (err) {
@@ -100,8 +103,17 @@ const AddressAutocomplete = ({
     return () => clearTimeout(timeout);
   }, [value]);
 
+  // Geoapify returns a street-level result ("Viking Close, London, E3 5RL")
+  // whenever the user has not typed a number into the search box, and there is
+  // no house number anywhere in it. For a delivery app that address is not
+  // usable, so when the result has no housenumber we ask for it separately and
+  // prepend it ourselves.
   const handleSelect = properties => {
     const formatted = properties?.formatted || '';
+    const hasNumber = Boolean(properties?.housenumber);
+
+    setBaseAddress(hasNumber ? '' : formatted);
+    setHouseNumber('');
 
     selectedRef.current = formatted;
 
@@ -111,6 +123,24 @@ const AddressAutocomplete = ({
     setVisible(false);
     setSearched(false);
   };
+
+  const handleHouseNumberChange = text => {
+    setHouseNumber(text);
+
+    const trimmed = text.trim();
+    const composed = trimmed ? `${trimmed} ${baseAddress}` : baseAddress;
+
+    // Keep the ref in step so composing does not re-trigger the lookup.
+    selectedRef.current = composed;
+
+    onChangeText(composed);
+  };
+
+  const needsHouseNumber = Boolean(baseAddress) && !houseNumber.trim();
+
+  useEffect(() => {
+    onValidityChange?.(!needsHouseNumber);
+  }, [needsHouseNumber, onValidityChange]);
 
   const showPanel =
     visible && (searching || searchFailed || suggestions.length > 0 || searched);
@@ -130,6 +160,31 @@ const AddressAutocomplete = ({
           onChangeText(text);
         }}
       />
+
+      {baseAddress && !showPanel ? (
+        <View style={styles.houseNumberBlock}>
+          <Input
+            type="text"
+            label="House / flat number or name"
+            placeholder="e.g. 12, Flat 3B, Rose Cottage"
+            icon="home-outline"
+            required
+            value={houseNumber}
+            error={
+              houseNumber.trim()
+                ? undefined
+                : 'Add your house or flat number so couriers can find you.'
+            }
+            onChangeText={handleHouseNumberChange}
+          />
+
+          <Text style={styles.houseNumberHint} numberOfLines={2}>
+            {houseNumber.trim()
+              ? `${houseNumber.trim()} ${baseAddress}`
+              : baseAddress}
+          </Text>
+        </View>
+      ) : null}
 
       {showPanel ? (
         <View style={styles.panel}>
@@ -196,6 +251,19 @@ const styles = StyleSheet.create({
   wrapper: {
     position: 'relative',
     zIndex: 20,
+  },
+
+  houseNumberBlock: {
+    marginTop: -6,
+    marginBottom: 14,
+  },
+
+  houseNumberHint: {
+    marginTop: -8,
+    marginBottom: 2,
+    color: '#718399',
+    fontSize: 12,
+    lineHeight: 17,
   },
 
   panel: {

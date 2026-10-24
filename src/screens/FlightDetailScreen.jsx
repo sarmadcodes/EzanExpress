@@ -34,6 +34,7 @@ import { USER } from '../context/User';
 
 import Input from '../components/Input/Input';
 import Button from '../components/Button/Button';
+import { getBackendError } from '../utils/getBackendError';
 
 const MIN_CAPACITY = 1;
 const MAX_CAPACITY = 40;
@@ -272,17 +273,6 @@ const FlightDetailScreen = ({ navigation, route }) => {
       ...previous,
       destination: '',
     }));
-  };
-
-  const getBackendError = error => {
-    const data = error?.response?.data;
-
-    return (
-      data?.msg ||
-      data?.message ||
-      data?.error ||
-      'Something went wrong. Please try again.'
-    );
   };
 
   const showErrorToast = message => {

@@ -2,6 +2,7 @@ import React, { useContext, useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   ScrollView,
@@ -21,10 +22,11 @@ import Toast from 'react-native-toast-message';
 
 import { LOADING } from '../context/Loading';
 import { USER } from '../context/User';
-import { BASE_API_URI } from '../constant/API';
+import { BASE_API_URI, TERMS_URL, PRIVACY_URL } from '../constant/API';
 import Input from '../components/Input/Input';
 import AddressAutocomplete from '../components/Input/AddressAutocomplete';
 import Button from '../components/Button/Button';
+import { getBackendError } from '../utils/getBackendError';
 
 const RegistrationScreen = ({ navigation }) => {
   const BG_COLOR = '#050B18';
@@ -49,6 +51,8 @@ const RegistrationScreen = ({ navigation }) => {
   const [identityDocument, setIdentityDocument] = useState(null);
 
   const [registeredUser, setRegisteredUser] = useState(null);
+  // False while the picked address is still missing a house number.
+  const [addressComplete, setAddressComplete] = useState(true);
 
   const [registrationToken, setRegistrationToken] = useState('');
 
@@ -84,15 +88,6 @@ const RegistrationScreen = ({ navigation }) => {
     });
   };
 
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Something went wrong. Please try again.'
-    );
-  };
-
   const formatDateForBackend = date => {
     if (!date) {
       return '';
@@ -120,6 +115,13 @@ const RegistrationScreen = ({ navigation }) => {
       !formData.password
     ) {
       showError('Please fill in all required fields.');
+      return false;
+    }
+
+    if (!addressComplete) {
+      showError(
+        'Add your house or flat number so couriers can find your address.',
+      );
       return false;
     }
 
@@ -515,7 +517,6 @@ const RegistrationScreen = ({ navigation }) => {
         password: formData.password,
       };
 
-      console.log('REGISTER PAYLOAD:', payload);
 
       const response = await axios.post(
         `${BASE_API_URI}/register`,
@@ -781,6 +782,7 @@ const RegistrationScreen = ({ navigation }) => {
               placeholder="Street, City, Postcode"
               required
               value={formData.address}
+              onValidityChange={setAddressComplete}
               onChangeText={value =>
                 setFormData(previous => ({
                   ...previous,
@@ -935,6 +937,27 @@ const RegistrationScreen = ({ navigation }) => {
                 and used for account verification.
               </Text>
             </View>
+
+            {/* App Review expects users to agree to the terms and see the
+                privacy policy before an account is created, especially where
+                identity documents are collected. */}
+            <Text style={styles.consentText}>
+              By creating an account you agree to the{' '}
+              <Text
+                style={styles.consentLink}
+                onPress={() => Linking.openURL(TERMS_URL)}
+              >
+                Terms of Service
+              </Text>{' '}
+              and{' '}
+              <Text
+                style={styles.consentLink}
+                onPress={() => Linking.openURL(PRIVACY_URL)}
+              >
+                Privacy Policy
+              </Text>
+              .
+            </Text>
 
             <View style={styles.submitContainer}>
               <Button
@@ -1371,6 +1394,21 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 17,
     marginLeft: 9,
+  },
+
+  consentText: {
+    marginTop: 4,
+    marginBottom: 12,
+    paddingHorizontal: 4,
+    color: '#8FA3B8',
+    fontSize: 12,
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+
+  consentLink: {
+    color: '#55A9FF',
+    textDecorationLine: 'underline',
   },
 
   submitContainer: {

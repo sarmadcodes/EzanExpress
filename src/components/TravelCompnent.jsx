@@ -12,7 +12,7 @@ import {
 import Ionicons from '@react-native-vector-icons/ionicons';
 import moment from 'moment';
 
-import { GEOAPIFY_API_KEY } from '../constant/API';
+import { BASE_API_URI } from '../constant/API';
 
 const TravelDashboard = ({ data, navigation }) => {
   const [isEnabled, setIsEnabled] = useState(true);
@@ -138,15 +138,14 @@ const TravelDashboard = ({ data, navigation }) => {
   }, [currentFlight]);
 
   const getCoordinates = async searchText => {
-    if (!searchText || !GEOAPIFY_API_KEY) {
+    if (!searchText) {
       return null;
     }
 
-    const url =
-      'https://api.geoapify.com/v1/geocode/search' +
-      `?text=${encodeURIComponent(searchText)}` +
-      '&limit=1' +
-      `&apiKey=${encodeURIComponent(GEOAPIFY_API_KEY)}`;
+    // Proxied through our backend; the Geoapify key stays server side.
+      const url =
+        `${BASE_API_URI}/address/geocode` +
+        `?text=${encodeURIComponent(searchText)}`;
 
     const response = await fetch(url);
 
@@ -157,7 +156,7 @@ const TravelDashboard = ({ data, navigation }) => {
     }
 
     const result = await response.json();
-    const location = result?.features?.[0]?.properties;
+    const location = result?.location;
 
     if (
       location?.lat === undefined ||
@@ -235,8 +234,7 @@ const TravelDashboard = ({ data, navigation }) => {
   const mapUrl = useMemo(() => {
     if (
       !departureCoords ||
-      !destinationCoords ||
-      !GEOAPIFY_API_KEY
+        !destinationCoords
     ) {
       return null;
     }
@@ -358,17 +356,11 @@ const TravelDashboard = ({ data, navigation }) => {
     );
 
     return (
-      'https://maps.geoapify.com/v1/staticmap' +
-      '?style=osm-bright-grey' +
-      '&width=900' +
-      '&height=500' +
-      '&format=png' +
-      `&center=lonlat:${centerLon},${centerLat}` +
-      `&zoom=${zoom}` +
-      `&geojson=${encodedGeoJson}` +
-      `&apiKey=${encodeURIComponent(
-        GEOAPIFY_API_KEY,
-      )}`
+      // Rendered by our backend so the key never reaches the device.
+      `${BASE_API_URI}/address/staticmap` +
+        `?center=lonlat:${centerLon},${centerLat}` +
+        `&zoom=${zoom}` +
+        `&geojson=${encodedGeoJson}`
     );
   }, [
     departureCoords,

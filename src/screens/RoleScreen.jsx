@@ -20,6 +20,7 @@ import Toast from 'react-native-toast-message';
 import { LOADING } from '../context/Loading';
 import { USER } from '../context/User';
 import { BASE_API_URI } from '../constant/API';
+import { getBackendError } from '../utils/getBackendError';
 
 const RoleCard = ({
   icon,
@@ -165,14 +166,6 @@ const RoleScreen = ({ navigation }) => {
     });
   };
 
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Something went wrong. Please try again.'
-    );
-  };
 
   const SelectRole = async role => {
     console.log('SELECTED ROLE:', role);

@@ -17,6 +17,7 @@ import Toast from 'react-native-toast-message';
 import { LOADING } from '../context/Loading';
 import { BASE_API_URI } from '../constant/API';
 import Button from '../components/Button/Button';
+import { getBackendError } from '../utils/getBackendError';
 
 const ForgotPasswordOtpScreen = ({ navigation, route }) => {
   const BG_COLOR = '#050B18';
@@ -32,14 +33,6 @@ const ForgotPasswordOtpScreen = ({ navigation, route }) => {
 
   const timerRef = useRef(null);
 
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Something went wrong. Please try again.'
-    );
-  };
 
   const startResendCountdown = () => {
     if (timerRef.current) {

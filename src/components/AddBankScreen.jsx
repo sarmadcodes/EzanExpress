@@ -6,6 +6,7 @@ import Ionicons from '@react-native-vector-icons/ionicons';
 import axios from 'axios';
 import BackBar from './BackBar';
 import { BASE_API_URI } from '../constant/API';
+import { getBackendError } from '../utils/getBackendError';
 
 const AddBankScreen = () => {
   const [status, setStatus] = useState(null);
@@ -30,7 +31,7 @@ const AddBankScreen = () => {
       setFeedback({
         type: 'error',
         title: 'Bank status unavailable',
-        message: error?.response?.data?.error || error?.response?.data?.message || error.message || 'Please try again.',
+        message: getBackendError(error),
       });
     } finally {
       setLoading(false);

@@ -18,6 +18,7 @@ import { LOADING } from '../context/Loading';
 import { BASE_API_URI } from '../constant/API';
 import Input from '../components/Input/Input';
 import Button from '../components/Button/Button';
+import { getBackendError } from '../utils/getBackendError';
 
 const ForgotPasswordScreen = ({ navigation }) => {
   const BG_COLOR = '#050B18';
@@ -31,14 +32,6 @@ const ForgotPasswordScreen = ({ navigation }) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim());
   };
 
-  const getBackendError = error => {
-    return (
-      error?.response?.data?.error ||
-      error?.response?.data?.message ||
-      error?.message ||
-      'Unable to send verification code. Please try again.'
-    );
-  };
 
   const onContinue = async () => {
     if (submitting) {

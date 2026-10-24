@@ -9,12 +9,13 @@ export const BASE_API_URI = __DEV__ ? DEV_API_URI : PROD_API_URI;
 
 
 
-export const GEOAPIFY_API_KEY = '7d5d96089c764dd6a2492ae47d30511f';
+// Address lookup is proxied through our backend at /address/autocomplete so
+// the Geoapify key is never shipped inside the app bundle.
       
-export const TERMS_URL = 'https://api.threadique.live/terms';
+export const TERMS_URL = 'https://sarmadcodes.github.io/ezanexpress-privacynterms/terms/';
 
-export const PRIVACY_URL = 'https://api.threadique.live/privacy';
+export const PRIVACY_URL = 'https://sarmadcodes.github.io/ezanexpress-privacynterms/privacy/';
 
 export const SUPPORT_EMAIL = 'ezanexpress@gmail.com';
 
-export const SUPPORT_URL = 'https://api.threadique.live/support';
+export const SUPPORT_URL = 'https://sarmadcodes.github.io/ezanexpress-privacynterms/support/';
